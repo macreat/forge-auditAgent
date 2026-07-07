@@ -1,0 +1,5 @@
+# Windows Metadata (Zone.Identifier)
+*:Zone.Identifier
+
+#logs
+**/logs
