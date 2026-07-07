@@ -1,1 +1,0 @@
-for templates, resources, etc
