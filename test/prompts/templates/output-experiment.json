@@ -5,13 +5,13 @@
             "model": "gpt-4",
             "type": "API",
             "response": "Hello! How can I assist you today?",
-            "delayResponse": "2024-06-19T20:00:01Z"
+            "durationMs": 1000
         },
         {
             "model": "ollama",
             "type": "Local",
             "response": "Hi there! I'm here to help you with any questions you have.",
-            "delayResponse": "2024-06-19T20:00:02Z"
+            "durationMs": 2000
         }
     ]
 }

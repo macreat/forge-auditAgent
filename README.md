@@ -68,15 +68,35 @@ forge-auditAgent/
 │   │   └── InitialProposalDev.pdf        # Commercial development proposal (PDF)
 │   └── flags/
 │       └── flags.md                      # Developer task tracking
+├── test/prompts/                         # Working CLI app (see below)
+│   ├── app/
+│   │   ├── main.py                       # Entrypoint
+│   │   ├── api/local.py                  # Hardware detection, HF model browser, GGUF download
+│   │   └── config/paths.py               # Path resolution
+│   ├── models/                           # Downloaded .gguf files land here
+│   ├── templates/                        # Experiment template JSON files
+│   └── requirements.txt                  # Python 3.14 venv dependencies
 ├── .agents/
 │   └── skills/
-│       ├── sw-development-proposal/
-│       │   └── SKILL.md                  # Proposal generator template blueprint
-│       └── skill-creator/                # Skill creation utility
-├── tools/                                # Future tooling (currently placeholder scripts)
+├── tools/                                # Future tooling
 ├── AGENTS.md                             # Agent onboarding & repo guide
 └── README.md                             # This file
 ```
+
+---
+
+## test/prompts/ — Working CLI
+
+A self-contained Python 3.14 CLI tool that auto-selects and downloads GGUF models matching your hardware.
+
+```bash
+cd test/prompts
+venv/bin/python3 app/main.py
+```
+
+**Flow:** hardware detection → HuggingFace model search (GGUF only, regex-filtered by param count) → quantization pick (with file sizes) → single `.gguf` download to `models/`.
+
+Dependencies: `huggingface_hub`, `psutil`, `GPUtil`, `ollama`. See `test/prompts/requirements.txt`.
 
 ---
 
@@ -120,7 +140,7 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 ## Repo Status
 
-This is an early-stage design/documentation project. There is **no runnable code, no build system, no test suite, and no package manager** yet. All design content lives under `reference/docs/`. CI/CD, linting, and dependency manifests will be introduced during Phase 1 implementation.
+This is a design/documentation project with an early-stage working prototype. Runnable code lives in `test/prompts/` (see above). No CI/CD, linting, or test suite yet. Full-stack implementation roadmap is outlined below.
 
 ---
 
