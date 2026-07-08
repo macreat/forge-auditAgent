@@ -2,31 +2,60 @@
 
 ## Repo status
 
-This is an early-stage design/documentation project. There is **no runnable code, no build system, no test suite, and no package manager** yet.
+The root is a design/documentation project. Runnable code lives in `test/prompts/` (Python CLI app). No CI, no lint/format/typecheck configs, no test suite, no package manager at root.
 
-## Key directories
+## Working code: `test/prompts/`
 
-### Design & Reference
+Self-contained Python 3.14 app with its own venv. Acts as a CLI tool to detect hardware, query HuggingFace for suitable GGUF models, let the user pick a quantization, and download a single `.gguf` file.
 
-- `reference/docs/mds/NotebookBuildAudit.md` — authoritative Construction Framework (3-phase build discipline) and Audit Framework (six-pass notebook review protocol, three-level LLM prompt templates)
-- `reference/docs/latex/NotebookBuildAudit.tex` — formal LaTeX spec with diagrams, full prompt templates, and structural trees for both frameworks
-- `reference/docs/mds/basis.md` — early design notes summarizing the Construction/Audit Frameworks at a higher level
-- `reference/docs/latex/basis.tex` — early LaTeX notes and prompt draft iterations (superseded by NotebookBuildAudit.tex)
+- **Run:** `cd test/prompts && venv/bin/python3 app/main.py`
+- **Deps:** `test/prompts/requirements.txt` (flet, huggingface_hub, psutil, GPUtil, ollama, httpx, oauthlib)
+- **Venv:** `test/prompts/venv/` — Python 3.14.4, created via `python3 -m venv`
 
-### Proposals
+```
+test/prompts/
+├── app/
+│   ├── main.py               # CLI entrypoint — hardware check → model list → quant pick → download
+│   ├── api/
+│   │   ├── local.py          # checkHardware, listAvailableModels, listAvailableQuantizations, downloadSelectedModel
+│   │   └── utils.py          # Placeholder — future LLM provider abstraction
+│   ├── config/paths.py       # MODELS_DIR / NOTEBOOKS_DIR resolved relative to ROOT_DIR
+│   └── UI/utils.py           # Placeholder UI module
+├── models/                   # Downloaded .gguf files land here flat (not in subdirs)
+├── notebooks/ (empty)
+├── requirements.txt
+└── venv/
+```
 
-- `reference/docs/InitialProposalDev.md` — commercial software development proposal for the Notebook Build Audit & Execution System (FastAPI, Vite+React+TS, Docker, Ollama/OpenAI hybrid LLM, @jupyter-kit)
-- `reference/docs/InitialProposalDev.tex` — LaTeX version of the same proposal (compiles to PDF via `latexmk -pdf` then `latexmk -c` for cleanup)
-- `reference/docs/InitialProposalDev.pdf` — compiled PDF of the proposal
+### App flow (main.py)
 
-### Project Management
+1. `checkHardware()` → dict with OS, RAM, GPU, recommendation (`size` float, `mode` "cpu"/"gpu")
+2. `listAvailableModels(hardwareDict)` → `list[str]` of GGUF model IDs from HuggingFace matching param count
+3. `listAvailableQuantizations(modelId)` → `dict[str, float]` of `{quant_name: size_mb}`
+4. `downloadSelectedModel(modelId, quantization)` → downloads single gguf to `MODELS_DIR/`
 
-- `reference/flags/flags.md` — developer task tracking; add/update entries when new work is scoped
-- `.agents/skills/sw-development-proposal/SKILL.md` — SKILL.md template blueprint for generating structured software development proposals
+### Key dependencies
+
+- `huggingface_hub` — `HfApi.list_models`, `list_repo_files`, `get_paths_info`, `hf_hub_download`
+- `psutil`, `GPUtil` — hardware detection (optional; graceful fallback on ImportError)
+
+## Design & Reference (root-level)
+
+- `reference/docs/mds/NotebookBuildAudit.md` — authoritative Construction Framework and Audit Framework
+- `reference/docs/latex/NotebookBuildAudit.tex` — formal LaTeX spec with diagrams and prompt templates
+- `reference/docs/mds/basis.md` — early design notes (superseded by NotebookBuildAudit.md)
+- `reference/docs/latex/basis.tex` — early LaTeX notes (superseded by NotebookBuildAudit.tex)
+- `reference/docs/InitialProposalDev.md` / `.tex` / `.pdf` — commercial development proposal
+- `reference/docs/InitialProposalDev.tex` compiles via `latexmk -pdf && latexmk -c`
+
+## Project Management
+
+- `reference/flags/flags.md` — developer task tracking
+- `.agents/skills/` — reusable agent skills
 - `tools/` — reserved for future tooling; currently empty
 
-## Notable repo quirks
+## Repo quirks
 
-- The root `README.md` is a mostly unfilled template skeleton. The real design content lives under `reference/docs/`.
-- `.skills/` and `.tools/` exist in git history but have been reorganized into `.agents/skills/` and `tools/` on the filesystem. Do not recreate the old dot-prefixed dirs.
-- There are no CI workflows, no lint/format/typecheck configs, and no dependency manifests.
+- `.skills/` and `.tools/` existed in git history but were reorganized. Do not recreate them.
+- Root `README.md` is stale — it claims no runnable code exists, but `test/prompts/` is a working app.
+- `hf_hub_download` creates a `.cache/huggingface/` dir inside `MODELS_DIR`; this is expected, not garbage.

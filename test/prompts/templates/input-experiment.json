@@ -1,0 +1,15 @@
+{
+    "timestamp": "2024-06-19T20:00:00Z",
+    "prompt": "You are a helpful assistant that can talk with any LLM application (current APIs and local models).",
+    "models": [
+        {
+            "name": "gpt-4",
+            "type": "API"
+        },
+        {
+            "name": "ollama",
+            "quantization": "q4_0",
+            "type": "Local"
+        }
+    ]
+}

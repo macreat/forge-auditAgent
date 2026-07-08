@@ -1,0 +1,17 @@
+{
+    "timestamp": "2024-06-19T20:00:00Z",
+    "outputs": [
+        {
+            "model": "gpt-4",
+            "type": "API",
+            "response": "Hello! How can I assist you today?",
+            "delayResponse": "2024-06-19T20:00:01Z"
+        },
+        {
+            "model": "ollama",
+            "type": "Local",
+            "response": "Hi there! I'm here to help you with any questions you have.",
+            "delayResponse": "2024-06-19T20:00:02Z"
+        }
+    ]
+}
