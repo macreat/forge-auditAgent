@@ -3,6 +3,7 @@ name: Release (test-prompts)
 on:
   push:
     tags: ['test-prompts/v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -11,10 +12,13 @@ jobs:
   build:
     name: Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
+    env:
+      CMAKE_BUILD_PARALLEL_LEVEL: 4
     defaults:
       run:
         working-directory: test/prompts
@@ -42,11 +46,11 @@ jobs:
       - name: Install app dependencies
         shell: bash
         run: |
+          grep -v 'llama-cpp-python' requirements.txt | pip install -r /dev/stdin
           if [ "${{ runner.os }}" = "macOS" ]; then
-            CMAKE_ARGS="-DGGML_METAL=ON" pip install -r requirements.txt
-            CMAKE_ARGS="-DGGML_METAL=ON" pip install llama-cpp-python[server] --force-reinstall --no-cache-dir
+            CMAKE_ARGS="-DGGML_METAL=ON" pip install llama-cpp-python[server] --no-cache-dir
           else
-            pip install -r requirements.txt
+            pip install llama-cpp-python[server]
           fi
 
       - name: Build app with PyInstaller
