@@ -70,9 +70,25 @@ forge-auditAgent/
 │       └── flags.md                      # Developer task tracking
 ├── test/prompts/                         # Working CLI app (see below)
 │   ├── app/
-│   │   ├── main.py                       # Entrypoint
-│   │   ├── api/local.py                  # Hardware detection, HF model browser, GGUF download
-│   │   └── config/paths.py               # Path resolution
+│   │   ├── main.py                       # Entrypoint — hardware check → model download
+│   │   ├── api/
+│   │   │   ├── local.py                  # Hardware detection, HF model browser, GGUF download,
+│   │   │   │                             #   AsyncLlamaServer (in-process LLM inference server)
+│   │   │   └── utils.py                  # Placeholder — future LLM provider abstraction
+│   │   ├── config/
+│   │   │   └── paths.py                  # Path resolution (MODELS_DIR, NOTEBOOKS_DIR)
+│   │   └── UI/
+│   │       └── utils.py                  # Placeholder UI module
+│   ├── scripts/
+│   │   └── install.py                    # Cross-platform installer (GPU backend detection + 
+│   │                                     #   llama-cpp-python[server] with correct CMAKE_ARGS)
+│   ├── docs/
+│   │   ├── README.md                     # Docs build instructions
+│   │   ├── requirements.txt              # sphinx, sphinx-rtd-theme
+│   │   ├── venv/                         # Isolated docs venv
+│   │   ├── conf.py                       # Sphinx config (autodoc, napoleon, RTD theme)
+│   │   ├── index.rst                     # Main toctree
+│   │   └── app.*.rst                     # Per-module autodoc pages
 │   ├── models/                           # Downloaded .gguf files land here
 │   ├── templates/                        # Experiment template JSON files
 │   └── requirements.txt                  # Python 3.14 venv dependencies
@@ -87,7 +103,18 @@ forge-auditAgent/
 
 ## test/prompts/ — Working CLI
 
-A self-contained Python 3.14 CLI tool that auto-selects and downloads GGUF models matching your hardware.
+A self-contained Python 3.14 CLI tool that auto-selects and downloads GGUF models matching your hardware, and serves them via a local OpenAI-compatible HTTP API.
+
+### Install
+
+```bash
+cd test/prompts
+venv/bin/python3 scripts/install.py
+```
+
+The installer detects your GPU backend (Metal on macOS, CUDA, or ROCm) and compiles `llama-cpp-python[server]` with the correct flags.
+
+### Run
 
 ```bash
 cd test/prompts
@@ -96,7 +123,37 @@ venv/bin/python3 app/main.py
 
 **Flow:** hardware detection → HuggingFace model search (GGUF only, regex-filtered by param count) → quantization pick (with file sizes) → single `.gguf` download to `models/`.
 
-Dependencies: `huggingface_hub`, `psutil`, `GPUtil`, `ollama`. See `test/prompts/requirements.txt`.
+### Multi-OS GPU acceleration
+
+| OS | Backend | Detection |
+|----|---------|-----------|
+| macOS | Metal | Always available |
+| Linux | CUDA / ROCm | nvidia-smi → rocm-smi |
+| Windows | CUDA | nvidia-smi |
+
+### AsyncLlamaServer
+
+In-process local LLM server using `llama-cpp-python[server]`. Serve any `.gguf` model via an OpenAI-compatible HTTP API:
+
+```python
+from app.api.local import AsyncLlamaServer
+
+server = AsyncLlamaServer("models/model.gguf", port=8000, nGpuLayers=-1)
+await server.start()   # launches in background
+# ... use the API at http://127.0.0.1:8000 ...
+await server.stop()
+```
+
+### Docs
+
+Separate Sphinx venv at `docs/venv/`. Build with:
+
+```bash
+cd test/prompts
+LC_ALL=C.UTF-8 docs/venv/bin/python3 -m sphinx -b html docs docs/_build -W
+```
+
+Dependencies: `huggingface_hub`, `psutil`, `GPUtil`, `llama-cpp-python[server]`, `ollama`. See `test/prompts/requirements.txt`.
 
 ---
 
@@ -140,7 +197,7 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 ## Repo Status
 
-This is a design/documentation project with an early-stage working prototype. Runnable code lives in `test/prompts/` (see above). No CI/CD, linting, or test suite yet. Full-stack implementation roadmap is outlined below.
+This is a design/documentation project with an active prototype. Runnable code lives in `test/prompts/` (see above) — a working CLI for hardware detection, GGUF model download, and local LLM inference. Sphinx documentation is set up under `test/prompts/docs/`. No CI/CD, linting, or test suite yet. Full-stack implementation roadmap is outlined below.
 
 ---
 
