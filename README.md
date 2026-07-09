@@ -54,56 +54,70 @@ The Construction Framework produces a notebook artifact; the Audit Framework dia
 ```
 forge-auditAgent/
 ├── reference/
+│   ├── README.md
 │   ├── docs/
 │   │   ├── mds/                          # Markdown specifications
-│   │   │   ├── NotebookBuildAudit.md     # Authoritative Construction & Audit Frameworks
+│   │   │   ├── NotebookBuildAudit.md     # Authoritative Construction & Audit Framework
+│   │   │   ├── InitialProposalDev.md     # Commercial development proposal
 │   │   │   └── basis.md                  # Early design notes (superseded)
 │   │   ├── latex/                        # Formal LaTeX specifications
-│   │   │   ├── NotebookBuildAudit.tex    # Full spec with diagrams, prompt templates, structural trees
+│   │   │   ├── NotebookBuildAudit.tex    # Full spec with diagrams, prompt templates
+│   │   │   ├── InitialProposalDev.tex    # Commercial development proposal
 │   │   │   └── basis.tex                 # Early prompt draft iterations (superseded)
 │   │   ├── pdfs/                         # Compiled PDFs
-│   │   ├── imgs/                         # Diagram source images
-│   │   ├── InitialProposalDev.md         # Commercial development proposal (Markdown)
-│   │   ├── InitialProposalDev.tex        # Commercial development proposal (LaTeX)
-│   │   └── InitialProposalDev.pdf        # Commercial development proposal (PDF)
+│   │   │   ├── NotebookBuildAudit.pdf
+│   │   │   └── InitialProposalDev.pdf
+│   │   └── imgs/                         # Diagram source images
 │   └── flags/
+│       ├── README.md
 │       └── flags.md                      # Developer task tracking
-├── test/prompts/                         # Working CLI app (see below)
-│   ├── app/
-│   │   ├── main.py                       # Entrypoint — hardware check → model download
-│   │   ├── api/
-│   │   │   ├── local.py                  # Hardware detection, HF model browser, GGUF download,
-│   │   │   │                             #   AsyncLlamaServer (in-process LLM inference server)
-│   │   │   └── utils.py                  # Placeholder — future LLM provider abstraction
-│   │   ├── config/
-│   │   │   └── paths.py                  # Path resolution (MODELS_DIR, NOTEBOOKS_DIR)
-│   │   └── UI/
-│   │       └── utils.py                  # Placeholder UI module
-│   ├── scripts/
-│   │   └── install.py                    # Cross-platform installer (GPU backend detection + 
-│   │                                     #   llama-cpp-python[server] with correct CMAKE_ARGS)
-│   ├── docs/
-│   │   ├── README.md                     # Docs build instructions
-│   │   ├── requirements.txt              # sphinx, sphinx-rtd-theme
-│   │   ├── venv/                         # Isolated docs venv
-│   │   ├── conf.py                       # Sphinx config (autodoc, napoleon, RTD theme)
-│   │   ├── index.rst                     # Main toctree
-│   │   └── app.*.rst                     # Per-module autodoc pages
-│   ├── models/                           # Downloaded .gguf files land here
-│   ├── templates/                        # Experiment template JSON files
-│   └── requirements.txt                  # Python 3.14 venv dependencies
+├── test/
+│   ├── code/
+│   │   └── conftest.py                   # Pytest configuration
+│   └── prompts/                          # Flet desktop app (see below)
+│       ├── app/
+│       │   ├── main.py                   # Dev entrypoint — launches Flet GUI
+│       │   ├── launcher.py               # PyInstaller entry point (path setup + user dirs)
+│       │   ├── api/
+│       │   │   ├── local.py              # Hardware detection, HF model browser, GGUF download,
+│       │   │   │                         #   AsyncLlamaServer (in-process LLM inference server)
+│       │   │   └── utils.py              # Placeholder — future LLM provider abstraction
+│       │   ├── config/
+│       │   │   ├── paths.py              # Path resolution (MODELS_DIR, dev vs deploy)
+│       │   │   └── settings.py           # JSON user config persistence
+│       │   └── UI/
+│       │       └── app.py                # Flet GUI (Hardware / Models / Server / Settings tabs)
+│       ├── scripts/
+│       │   └── install.py                # Cross-platform installer (GPU backend detection +
+│       │                                 #   llama-cpp-python[server] with correct CMAKE_ARGS)
+│       ├── tools/
+│       │   └── hello_llm.py              # Smoke-test: chat completion to localhost:8000
+│       ├── docs/                         # Sphinx documentation
+│       ├── models/                       # Downloaded .gguf files land here
+│       ├── templates/                    # Experiment template JSON files
+│       ├── requirements.txt
+│       ├── test-prompts-app.spec         # PyInstaller spec (Flet app binary)
+│       └── test-prompts-installer.spec   # PyInstaller spec (installer binary)
+├── backend/                              # Future FastAPI backend
+├── frontend/                             # Future Vite + React frontend
 ├── .agents/
-│   └── skills/
-├── tools/                                # Future tooling
+│   └── skills/                           # Reusable agent skills (flet, github-actions, etc.)
+├── .github/
+│   └── workflows/
+│       └── release.yml                   # CI multiplatform release workflow
+├── tools/
+│   └── install_agent_tools.sh            # System dependency installer
+├── logs/
+├── requirements.txt                      # Root-level pip requirements
 ├── AGENTS.md                             # Agent onboarding & repo guide
 └── README.md                             # This file
 ```
 
 ---
 
-## test/prompts/ — Working CLI
+## test/prompts/ — Desktop GUI (Flet)
 
-A self-contained Python 3.14 CLI tool that auto-selects and downloads GGUF models matching your hardware, and serves them via a local OpenAI-compatible HTTP API.
+A cross-platform desktop app built with Python 3.14 and Flet that detects your hardware, queries HuggingFace for suitable GGUF models, lets you pick a quantization, downloads a single `.gguf` file, and serves it via a local OpenAI-compatible HTTP API — all through a graphical interface.
 
 ### Install
 
@@ -121,7 +135,20 @@ cd test/prompts
 venv/bin/python3 app/main.py
 ```
 
-**Flow:** hardware detection → HuggingFace model search (GGUF only, regex-filtered by param count) → quantization pick (with file sizes) → single `.gguf` download to `models/`.
+**GUI tabs:** Hardware Info → Model Browser (HuggingFace GGUF search with param-count filter) → Quantization Picker (with file sizes) → Download → Local Server (start/stop with nGpuLayers and nCtx controls).
+
+### PyInstaller builds
+
+```bash
+cd test/prompts
+pip install pyinstaller
+pyinstaller test-prompts-app.spec        # Flet GUI binary
+pyinstaller test-prompts-installer.spec  # CLI installer binary
+```
+
+### CI/CD
+
+Push a `test-prompts/v*` tag to trigger the multiplatform release workflow (`.github/workflows/release.yml`) — builds PyInstaller binaries on Linux, macOS, and Windows and publishes them to GitHub Releases.
 
 ### Multi-OS GPU acceleration
 
@@ -189,7 +216,7 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 - [NotebookBuildAudit.md](reference/docs/mds/NotebookBuildAudit.md) — complete Construction and Audit Framework specification
 - [NotebookBuildAudit.tex](reference/docs/latex/NotebookBuildAudit.tex) — formal LaTeX with diagrams and prompt templates
-- [InitialProposalDev.md](reference/docs/InitialProposalDev.md) — commercial development proposal
+- [InitialProposalDev.md](reference/docs/mds/InitialProposalDev.md) — commercial development proposal
 - [AGENTS.md](AGENTS.md) — agent onboarding and repo guide
 - [flags.md](reference/flags/flags.md) — developer task tracking
 
@@ -197,7 +224,7 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 ## Repo Status
 
-This is a design/documentation project with an active prototype. Runnable code lives in `test/prompts/` (see above) — a working CLI for hardware detection, GGUF model download, and local LLM inference. Sphinx documentation is set up under `test/prompts/docs/`. No CI/CD, linting, or test suite yet. Full-stack implementation roadmap is outlined below.
+This is a design/documentation project with an active prototype. Runnable code lives in `test/prompts/` (see above) — a working Flet desktop GUI for hardware detection, GGUF model download, and local LLM inference. Sphinx documentation is set up under `test/prompts/docs/`. CI/CD is configured via GitHub Actions (`test-prompts/v*` tags trigger multiplatform PyInstaller builds). No linting or test suite yet. Full-stack implementation roadmap is outlined below.
 
 ---
 

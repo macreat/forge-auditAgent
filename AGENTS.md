@@ -2,7 +2,7 @@
 
 ## Repo status
 
-The root is a design/documentation project. Runnable code lives in `test/prompts/` (Python CLI app). No CI, no lint/format/typecheck configs, no test suite, no package manager at root.
+The root is a design/documentation project. Runnable code lives in `test/prompts/` (Flet desktop app). CI via `.github/workflows/release.yml` (multiplatform PyInstaller builds on `test-prompts/v*` tags). No lint/format/typecheck configs, no test suite, no package manager at root. Placeholder dirs `backend/` and `frontend/` exist for the future full-stack implementation.
 
 ## Working code: `test/prompts/`
 
@@ -46,8 +46,14 @@ test/prompts/
 │   ├── conf.py                 # Sphinx config (autodoc, napoleon, RTD theme, mock imports)
 │   ├── index.rst               # Main toctree
 │   └── app.*.rst               # Per-module doc pages
+├── templates/
+│   ├── README.md
+│   ├── input-experiment.json
+│   └── output-experiment.json
 ├── models/                     # Downloaded .gguf files land here (dev) or ~/.test-prompts/models (deploy)
 ├── notebooks/ (empty)
+├── test-prompts-app.spec       # PyInstaller spec — Flet GUI binary
+├── test-prompts-installer.spec # PyInstaller spec — installer binary
 ├── requirements.txt
 └── venv/
 ```
@@ -97,21 +103,24 @@ See `docs/README.md` for full setup instructions.
 
 - `reference/docs/mds/NotebookBuildAudit.md` — authoritative Construction Framework and Audit Framework
 - `reference/docs/latex/NotebookBuildAudit.tex` — formal LaTeX spec with diagrams and prompt templates
+- `reference/docs/pdfs/NotebookBuildAudit.pdf` — compiled specification PDF
+- `reference/docs/mds/InitialProposalDev.md` — commercial development proposal (also in `.tex` and `.pdf`)
 - `reference/docs/mds/basis.md` — early design notes (superseded by NotebookBuildAudit.md)
 - `reference/docs/latex/basis.tex` — early LaTeX notes (superseded by NotebookBuildAudit.tex)
-- `reference/docs/InitialProposalDev.md` / `.tex` / `.pdf` — commercial development proposal
 - `reference/docs/InitialProposalDev.tex` compiles via `latexmk -pdf && latexmk -c`
 
 ## Project Management
 
 - `reference/flags/flags.md` — developer task tracking
 - `.agents/skills/` — reusable agent skills
+- `.github/workflows/release.yml` — CI multiplatform release workflow
 - `tools/` — root-level scripts; currently contains `install_agent_tools.sh`
+- `backend/` — placeholder for future FastAPI backend
+- `frontend/` — placeholder for future Vite + React frontend
 
 ## Repo quirks
 
 - `.skills/` and `.tools/` existed in git history but were reorganized. Do not recreate them.
-- Root `README.md` is stale — it claims no runnable code exists, but `test/prompts/` is a working app.
 - `hf_hub_download` creates a `.cache/huggingface/` dir inside `MODELS_DIR`; this is expected, not garbage.
 - `scripts/` was originally named `cmd/` but had to be renamed — `cmd` shadows Python's stdlib `cmd` module.
 - Docs use `autodoc_mock_imports` to avoid pulling in the full app venv's dependencies at build time.
