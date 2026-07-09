@@ -1,12 +1,30 @@
-#checks hardware andd suggest downloadable LLMs based on system specs
+"""Hardware detection, HuggingFace model discovery, and local LLM server.
+
+Provides functions to detect OS, RAM, and GPU hardware, query HuggingFace
+for compatible GGUF models, download selected models, and run a local
+inference server via :mod:`llama_cpp`.
+
+Backend support (multi-OS):
+    - **CUDA** — NVIDIA GPUs on Linux / Windows
+    - **ROCm** — AMD GPUs on Linux
+    - **Metal** — Apple Silicon / Intel on macOS
+"""
 
 import platform
 import subprocess
 import re
+import asyncio
 from huggingface_hub import HfApi, hf_hub_download
-from config.paths import MODELS_DIR
+from app.config.paths import MODELS_DIR, defaultModelsDir
 
 def checkHardware():
+    """Check the local system hardware and return a summary dict.
+
+    Returns:
+        dict: Keys ``os``, ``systemRam``, ``gpu``, ``recommendation``.
+            See :func:`_detectRam`, :func:`_detectGpu`, and
+            :func:`_makeRecommendation` for sub-structure details.
+    """
     result = {
         "os": {},
         "systemRam": {},
@@ -14,7 +32,6 @@ def checkHardware():
         "recommendation": {}
     }
 
-    # ---- OS detection ----
     system = platform.system()
     isWsl = _detectWsl()
     result["os"] = {
@@ -24,17 +41,42 @@ def checkHardware():
         "hostname": platform.node()
     }
 
-    # ---- System RAM ----
     result["systemRam"] = _detectRam()
 
-    # ---- GPU ----
-    result["gpu"] = _detectGpu()
+    gpuAccelAvailable = haveGpuAccel()
+    totalRamGb = result["systemRam"].get("totalGb", 0)
+    if gpuAccelAvailable:
+        result["gpu"] = _detectGpu(totalRamGb)
+    else:
+        result["gpu"] = {"devices": [], "primary": None, "gpuAccelAvailable": False}
 
-    # ---- LLM Recommendation ----
     result["recommendation"] = _makeRecommendation(result)
 
     return result
 
+def haveGpuAccel():
+    """Detect whether any GPU acceleration backend is available.
+
+    Checks for Metal (macOS), CUDA (nvidia-smi), or ROCm (rocm-smi).
+
+    Returns:
+        bool: ``True`` if a supported GPU backend was detected.
+    """
+    system = platform.system()
+    if system == "Darwin":
+        return True
+    try:
+        subprocess.check_output(["nvidia-smi"], text=True, stderr=subprocess.DEVNULL)
+        return True
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    if system == "Linux":
+        try:
+            subprocess.check_output(["rocm-smi"], text=True, stderr=subprocess.DEVNULL)
+            return True
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pass
+    return False
 
 def _detectWsl():
     if platform.system() != "Linux":
@@ -60,10 +102,46 @@ def _detectRam():
                 "error": "psutil not installed"}
 
 
-def _detectGpu():
-    gpus = []
+def _detectGpu(totalRamGb=0):
+    """Enumerate GPUs available for acceleration.
 
-    # 1. Try GPUtil (NVIDIA, cross-platform when CUDA drivers present)
+    Detection order:
+        - macOS: ``system_profiler SPDisplaysDataType`` (Metal)
+        - GPUtil (NVIDIA)
+        - nvidia-smi CLI (NVIDIA)
+        - rocm-smi CLI (AMD)
+
+    Args:
+        totalRamGb (float): Total system RAM in GiB. Used as VRAM on
+            Apple Silicon (unified memory).
+
+    Returns:
+        dict: ``{"devices": [...], "primary": {...}|None}`` where each
+        device has keys ``name``, ``vramGb``, ``vendor``, ``source``.
+    """
+
+    gpus = []
+    system = platform.system()
+    if system == "Darwin":
+        try:
+            output = _runCommand(
+                ["system_profiler", "SPDisplaysDataType"]
+            )
+            for line in output.split("\n"):
+                m = re.search(r"Chipset Model:\s+(.+)", line)
+                if m:
+                    gpus.append({
+                        "name": m.group(1).strip(),
+                        "vramGb": totalRamGb,
+                        "vendor": "apple",
+                        "source": "system_profiler"
+                    })
+            if gpus:
+                return {"devices": gpus, "primary": gpus[0]}
+        except Exception:
+            pass
+        return {"devices": [], "primary": None}
+
     try:
         import GPUtil
         for g in GPUtil.getGPUs():
@@ -78,7 +156,6 @@ def _detectGpu():
     except Exception:
         pass
 
-    # 2. Try nvidia-smi CLI
     try:
         output = _runCommand(
             ["nvidia-smi", "--query-gpu=name,memory.total",
@@ -102,57 +179,28 @@ def _detectGpu():
     except Exception:
         pass
 
-    # 3. Try AMD ROCm (Linux only)
     try:
         output = _runCommand(
-            ["rocm-smi", "--showproductname", "--csv"]
+            ["rocm-smi", "--showproductname", "--showmeminfo", "vram", "--csv"]
         )
-        for line in output.strip().split("\n"):
-            if line.startswith("GPU") or not line.strip():
-                continue
+        lines = [line.strip() for line in output.strip().split("\n") if line.strip()]
+        if len(lines) < 2:
+            raise ValueError("no GPU rows")
+        headerLine = [p.strip().strip('"') for p in lines[0].split(",")]
+        nameIdx = next((i for i, h in enumerate(headerLine) if "product" in h.lower() or "name" in h.lower()), 0)
+        vramIdx = next((i for i, h in enumerate(headerLine) if "vram" in h.lower() or "mem" in h.lower()), None)
+        for line in lines[1:]:
             parts = [p.strip().strip('"') for p in line.split(",")]
-            if parts:
-                name = parts[0] if len(parts) >= 1 else "AMD GPU"
-                gpus.append({"name": name, "vramGb": None,
-                             "vendor": "amd", "source": "rocm-smi"})
-        if gpus:
-            return {"devices": gpus, "primary": gpus[0]}
-    except Exception:
-        pass
-
-    # 4. Try macOS system_profiler
-    system = platform.system()
-    if system == "Darwin":
-        try:
-            output = _runCommand(
-                ["system_profiler", "SPDisplaysDataType"]
-            )
-            for line in output.split("\n"):
-                m = re.search(r"Chipset Model:\s+(.+)", line)
-                if m:
-                    gpus.append({"name": m.group(1).strip(), "vramGb": None,
-                                 "vendor": "apple", "source": "system_profiler"})
-            if gpus:
-                return {"devices": gpus, "primary": gpus[0]}
-        except Exception:
-            pass
-
-    # 5. Fallback: try lspci (Linux), wmic (Windows)
-    try:
-        if system == "Linux":
-            output = _runCommand(["lspci"])
-            for line in output.split("\n"):
-                if "VGA" in line or "3D" in line:
-                    gpus.append({"name": line.strip(), "vramGb": None,
-                                 "vendor": "unknown", "source": "lspci"})
-        elif system == "Windows":
-            output = _runCommand(
-                ["wmic", "path", "win32_VideoController", "get", "Name"]
-            )
-            for line in output.strip().split("\n")[1:]:
-                if line.strip():
-                    gpus.append({"name": line.strip(), "vramGb": None,
-                                 "vendor": "unknown", "source": "wmic"})
+            name = parts[nameIdx] if nameIdx < len(parts) else "AMD GPU"
+            vramGb = None
+            if vramIdx is not None and vramIdx < len(parts) and parts[vramIdx]:
+                vramGb = round(float(parts[vramIdx]) / (1024 ** 3), 2)
+            gpus.append({
+                "name": name,
+                "vramGb": vramGb,
+                "vendor": "amd",
+                "source": "rocm-smi"
+            })
         if gpus:
             return {"devices": gpus, "primary": gpus[0]}
     except Exception:
@@ -168,6 +216,19 @@ def _runCommand(cmd):
 
 
 def _makeRecommendation(result):
+    """Suggest a model parameter-size ceiling based on hardware.
+
+    Uses GPU VRAM when available, otherwise falls back to system RAM.
+
+    Args:
+        result (dict): The full hardware dict produced by
+            :func:`checkHardware`.
+
+    Returns:
+        dict: ``{"size": float, "mode": str}`` where ``size`` is the
+        recommended max parameter count in bytes and ``mode`` is
+        ``"gpu"`` or ``"cpu"``.
+    """
     ram = result["systemRam"]
     availableRamGb = ram.get("availableGb", 0)
     totalRamGb = ram.get("totalGb", 0)
@@ -218,6 +279,14 @@ def _makeRecommendation(result):
     return recommendation
 
 def listAvailableModels(recommendationDict):
+    """Query HuggingFace for GGUF text-generation models within size limits.
+
+    Args:
+        recommendationDict (dict): Output of :func:`checkHardware`.
+
+    Returns:
+        list[str]: HuggingFace model IDs (e.g. ``"org/repo"``).
+    """
     maxModelSize = recommendationDict["recommendation"]["size"]
 
     api = HfApi()
@@ -244,6 +313,14 @@ def listAvailableModels(recommendationDict):
     return filtered_models
 
 def listAvailableQuantizations(modelId):
+    """List GGUF quantization variants and their sizes for a model.
+
+    Args:
+        modelId (str): HuggingFace model ID (``org/repo``).
+
+    Returns:
+        dict[str, float]: Quantization name → file size in MiB.
+    """
     api = HfApi()
     files = api.list_repo_files(repo_id=modelId)
     gguFs = sorted(f for f in files if f.endswith(".gguf"))
@@ -259,6 +336,18 @@ def listAvailableQuantizations(modelId):
     return result
 
 def downloadSelectedModel(modelId, quantization):
+    """Download a single GGUF file for the given model and quantization.
+
+    Args:
+        modelId (str): HuggingFace model ID.
+        quantization (str): Quantization tag (e.g. ``"Q4_K_M"``).
+
+    Returns:
+        str: Local path to the downloaded ``.gguf`` file.
+
+    Raises:
+        ValueError: If the quantization is not found in the repository.
+    """
     api = HfApi()
     files = api.list_repo_files(repo_id=modelId)
     match = None
@@ -271,5 +360,67 @@ def downloadSelectedModel(modelId, quantization):
     return hf_hub_download(
         repo_id=modelId,
         filename=match,
-        local_dir=str(MODELS_DIR)
+        local_dir=str(defaultModelsDir())
     )
+
+
+class AsyncLlamaServer:
+    """In-process local LLM server using :mod:`llama_cpp` and :mod:`uvicorn`.
+
+    Wraps ``llama-cpp-python[server]`` to serve a GGUF model via an
+    OpenAI-compatible HTTP API without spawning a separate process.
+
+    Args:
+        modelPath (str): Absolute path to the ``.gguf`` model file.
+        host (str): Bind address. Default ``"127.0.0.1"``.
+        port (int): Listen port (1–65535). Default ``8000``.
+        nGpuLayers (int): Layers to offload to GPU. ``-1`` for all,
+            ``0`` for CPU-only. Default ``0``.
+        nCtx (int): Context window size in tokens. Default ``2048``.
+
+    Example:
+        >>> server = AsyncLlamaServer("/path/to/model.gguf", nGpuLayers=-1)
+        >>> await server.start()
+        >>> # server is now serving at http://127.0.0.1:8000
+        >>> await server.stop()
+    """
+    def __init__(self, modelPath, host="127.0.0.1", port=8000, nGpuLayers=0, nCtx=2048):
+        if not isinstance(port, int) or port < 1 or port > 65535:
+            raise ValueError(f"Invalid port: {port}")
+        self.modelPath = modelPath
+        self.host = host
+        self.port = port
+        self.nGpuLayers = nGpuLayers
+        self.nCtx = nCtx
+        self._server = None
+        self._task = None
+
+    async def start(self):
+        from llama_cpp.server.app import create_app
+        from llama_cpp.server.settings import ModelSettings, ServerSettings
+        import uvicorn
+
+        modelSettings = ModelSettings(
+            model=self.modelPath,
+            n_ctx=self.nCtx,
+            n_gpu_layers=self.nGpuLayers
+        )
+        serverSettings = ServerSettings(
+            host=self.host,
+            port=self.port
+        )
+        app = create_app(
+            server_settings=serverSettings,
+            model_settings=[modelSettings]
+        )
+        config = uvicorn.Config(app, host=self.host, port=self.port, log_level="warning")
+        self._server = uvicorn.Server(config)
+        self._task = asyncio.create_task(self._server.serve())
+
+    async def stop(self):
+        if self._server:
+            self._server.should_exit = True
+            if self._task:
+                await self._task
+            self._server = None
+            self._task = None

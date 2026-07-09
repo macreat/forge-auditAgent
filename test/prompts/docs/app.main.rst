@@ -1,0 +1,7 @@
+app.main
+========
+
+.. automodule:: app.main
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,32 +1,16 @@
-# Main application file
-from api.local import checkHardware, listAvailableModels, listAvailableQuantizations, downloadSelectedModel
-from config.paths import debugPaths
+"""Development entry point for test-prompts-app.
 
-INITIAL_WARNING = "WARNING: While using this application, close all the other appplications to avoid RAM and VRAM filling up. This application is resource intensive and may cause your system to become unresponsive if other applications are running."
+Runs the Flet UI directly. Requires the project venv to be set up with
+all dependencies installed (see scripts/install.py).
+"""
+
+import sys
+import os
 
 if __name__ == "__main__":
-	#debugPaths()
-	#print(INITIAL_WARNING)
-	hardwareResult = checkHardware()
-	print("--- Hardware Check ---")
-	print(hardwareResult)
-	availableModels = listAvailableModels(hardwareResult)
-	print("--- Available Models ---")
-	for index, model in enumerate(availableModels):
-		print(f"[{index}] {model}")
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-	choice = int(input("\nEnter the number of the model you want to download: "))
-	selectedModel = availableModels[choice]
+from app.UI.app import main
 
-	quantizations = listAvailableQuantizations(selectedModel)
-	print(f"\n--- Available Quantizations for {selectedModel} ---")
-	quantNames = list(quantizations.keys())
-	for i, name in enumerate(quantNames):
-		print(f"[{i}] {name} ({quantizations[name]} MB)")
-
-	quantChoice = int(input("\nEnter the number of the quantization: "))
-	selectedQuant = quantNames[quantChoice]
-
-	print(f"\nDownloading {selectedModel} ({selectedQuant})...")
-	path = downloadSelectedModel(selectedModel, selectedQuant)
-	print(f"\nDownload complete: {path}")
+if __name__ == "__main__":
+    main()

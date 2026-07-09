@@ -1,2 +1,6 @@
 models/
 __pycache__/
+dist/
+build/
+docs/_build/
+docs/venv/

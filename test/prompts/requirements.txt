@@ -4,6 +4,7 @@ certifi==2026.6.17
 click==8.4.2
 filelock==3.29.7
 flet==0.85.3
+flet-desktop==0.85.3
 fsspec==2026.6.0
 GPUtil==1.4.0
 h11==0.16.0
@@ -12,6 +13,7 @@ httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==1.22.0
 idna==3.18
+llama-cpp-python[server]
 msgpack==1.2.1
 oauthlib==3.3.1
 ollama==0.6.2
