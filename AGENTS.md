@@ -6,7 +6,7 @@ The root is a design/documentation project. Runnable code lives in `test/prompts
 
 ## Working code: `test/prompts/`
 
-Self-contained Python 3.14 app with its own venv. Desktop GUI (Flet) to detect hardware, query HuggingFace for suitable GGUF models, let the user pick a quantization, download a single `.gguf` file, and serve it via a local OpenAI-compatible HTTP API.
+Self-contained Python 3.14 app with its own venv. Desktop GUI (Flet) to detect hardware, query HuggingFace for suitable GGUF models, let the user pick a quantization, download a single `.gguf` file, serve it via a local OpenAI-compatible HTTP API, and benchmark multiple models/APIs side-by-side with a shared prompt.
 
 - **Run:** `cd test/prompts && venv/bin/python3 app/main.py`
 - **Install:** `cd test/prompts && venv/bin/python3 scripts/install.py`
@@ -32,7 +32,7 @@ test/prompts/
 │   │   └── settings.py         # JSON user config (~/.test-prompts/config.json)
 │   └── UI/
 │       ├── __init__.py         # Package marker
-│       └── app.py              # Flet GUI (Hardware / Models / Server / Settings tabs)
+│       └── app.py              # Flet GUI (Hardware / Models / Server / Settings / Benchmark tabs)
 ├── scripts/
 │   ├── __init__.py             # Package marker
 │   └── install.py              # Cross-platform installer — detects GPU backend, installs

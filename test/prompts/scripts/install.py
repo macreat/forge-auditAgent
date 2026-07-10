@@ -81,13 +81,23 @@ def detectBackend():
         return "metal"
     try:
         subprocess.check_output(["nvidia-smi"], text=True, stderr=subprocess.DEVNULL)
-        return "cuda"
+        if shutil.which("nvcc"):
+            return "cuda"
+        print("WARNING: nvidia-smi found but nvcc (CUDA Toolkit) is not installed.")
+        print("  Install the CUDA Toolkit or run with CPU-only mode.")
+        print("  Falling back to CPU mode.")
+        return "cpu"
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
     if system == "Linux":
         try:
             subprocess.check_output(["rocm-smi"], text=True, stderr=subprocess.DEVNULL)
-            return "rocm"
+            if shutil.which("hipcc") or shutil.which("nvcc"):
+                return "rocm"
+            print("WARNING: rocm-smi found but HIP compiler is not installed.")
+            print("  Install the ROCm toolkit or run with CPU-only mode.")
+            print("  Falling back to CPU mode.")
+            return "cpu"
         except (subprocess.CalledProcessError, FileNotFoundError):
             pass
     return "cpu"

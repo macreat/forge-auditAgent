@@ -258,7 +258,183 @@ def build(page: ft.Page):
         expand=True,
     )
 
-    panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel]
+    # --- Benchmark Panel ---
+    benchmarkModelChecks = ft.Column(spacing=4)
+    benchmarkApiList = ft.Column(spacing=4)
+    apiUrlField = ft.TextField(
+        label="API endpoint URL", hint_text="http://host:port/v1", expand=True, height=48
+    )
+    promptField = ft.TextField(
+        label="Prompt",
+        hint_text="Paste your prompt here...",
+        multiline=True,
+        min_lines=5,
+        max_lines=10,
+        expand=True,
+    )
+    benchmarkStatus = ft.Text("")
+    resultsColumn = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO, expand=True)
+
+    def refreshBenchmarkModels():
+        modelsDir = cfg["modelsDir"]
+        benchmarkModelChecks.controls.clear()
+        try:
+            for entry in sorted(os.scandir(modelsDir), key=lambda e: e.name):
+                if entry.is_file() and entry.name.endswith(".gguf"):
+                    benchmarkModelChecks.controls.append(
+                        ft.Checkbox(label=entry.name, value=True)
+                    )
+        except FileNotFoundError:
+            pass
+        page.update()
+
+    def addApiEndpoint(e):
+        url = apiUrlField.value.strip()
+        if url:
+            benchmarkApiList.controls.append(
+                ft.Row(
+                    [
+                        ft.Checkbox(label=f"API: {url}", value=True, expand=True),
+                        ft.IconButton(
+                            icon=ft.Icons.DELETE,
+                            on_click=lambda e, u=url: removeApiEndpoint(u),
+                        ),
+                    ]
+                )
+            )
+            apiUrlField.value = ""
+            page.update()
+
+    def removeApiEndpoint(url):
+        benchmarkApiList.controls = [
+            c
+            for c in benchmarkApiList.controls
+            if not (
+                isinstance(c, ft.Row)
+                and isinstance(c.controls[0], ft.Checkbox)
+                and url in c.controls[0].label
+            )
+        ]
+        page.update()
+
+    def readyBenchmark(e):
+        selected = []
+        for check in benchmarkModelChecks.controls:
+            if isinstance(check, ft.Checkbox) and check.value:
+                selected.append({"name": check.label, "type": "gguf"})
+        for row in benchmarkApiList.controls:
+            if isinstance(row, ft.Row):
+                check = row.controls[0]
+                if isinstance(check, ft.Checkbox) and check.value:
+                    label = check.label
+                    url = label.replace("API: ", "")
+                    selected.append({"name": label, "type": "api", "endpoint": url})
+        if not selected:
+            benchmarkStatus.value = "No models or APIs selected."
+            page.update()
+            return
+        benchmarkStatus.value = f"Ready: {len(selected)} model(s)/API(s) selected."
+        resultsColumn.controls.clear()
+        for item in selected:
+            resultsColumn.controls.append(
+                ft.Container(
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                item["name"],
+                                weight=ft.FontWeight.BOLD,
+                                color=ft.Colors.BLUE_400,
+                            ),
+                            ft.TextField(
+                                value=f"[Response from {item['name']} will appear here]",
+                                multiline=True,
+                                min_lines=3,
+                                read_only=True,
+                                expand=True,
+                            ),
+                        ]
+                    ),
+                    padding=10,
+                    border=ft.Border(
+                        top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                        left=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                        right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                        bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                    ),
+                    border_radius=8,
+                    margin=ft.Margin(left=0, top=0, right=0, bottom=8),
+                )
+            )
+        page.update()
+
+    def sendToAll(e):
+        prompt = promptField.value.strip()
+        if not prompt:
+            benchmarkStatus.value = "Please enter a prompt."
+            page.update()
+            return
+        if not resultsColumn.controls:
+            benchmarkStatus.value = "Click 'Ready' first to select models."
+            page.update()
+            return
+        for container in resultsColumn.controls:
+            if isinstance(container, ft.Container):
+                col = container.content
+                if isinstance(col, ft.Column) and len(col.controls) >= 2:
+                    name_text = col.controls[0]
+                    response_field = col.controls[1]
+                    if isinstance(response_field, ft.TextField):
+                        response_field.value = (
+                            f"Response from {name_text.value}:\n"
+                            f"Echo: {prompt}\n\n"
+                            f"[This is a placeholder response]"
+                        )
+        benchmarkStatus.value = "Sent! (placeholder responses)"
+        page.update()
+
+    benchmarkPanel = ft.Column(
+        [
+            ft.Text("Benchmark Models & APIs", weight=ft.FontWeight.BOLD, size=16),
+            ft.Divider(),
+            ft.Row(
+                [
+                    ft.Text("Available models:", weight=ft.FontWeight.BOLD),
+                    ft.ElevatedButton(
+                        "Refresh", on_click=lambda _: refreshBenchmarkModels()
+                    ),
+                    ft.ElevatedButton(
+                        "Ready", on_click=readyBenchmark, bgcolor=ft.Colors.BLUE_700
+                    ),
+                ]
+            ),
+            benchmarkModelChecks,
+            ft.Divider(),
+            ft.Text("API Endpoints:", weight=ft.FontWeight.BOLD),
+            benchmarkApiList,
+            ft.Row([apiUrlField, ft.ElevatedButton("+ Add", on_click=addApiEndpoint)]),
+            ft.Divider(),
+            ft.Text("Prompt:", weight=ft.FontWeight.BOLD),
+            promptField,
+            ft.Row(
+                [
+                    ft.ElevatedButton(
+                        "Send to All",
+                        on_click=sendToAll,
+                        bgcolor=ft.Colors.GREEN_700,
+                    ),
+                    benchmarkStatus,
+                ]
+            ),
+            ft.Divider(),
+            ft.Text("Results:", weight=ft.FontWeight.BOLD, size=14),
+            resultsColumn,
+        ],
+        spacing=8,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+    panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel, benchmarkPanel]
 
     tabs = ft.Tabs(
         selected_index=0,
@@ -273,6 +449,7 @@ def build(page: ft.Page):
                         ft.Tab(label="Models"),
                         ft.Tab(label="Server"),
                         ft.Tab(label="Settings"),
+                        ft.Tab(label="Benchmark"),
                     ],
                 ),
                 ft.TabBarView(
@@ -287,6 +464,7 @@ def build(page: ft.Page):
     loadHardware()
     searchModels()
     refreshModelList()
+    refreshBenchmarkModels()
 
 
 def main():

@@ -86,7 +86,7 @@ forge-auditAgent/
 │       │   │   ├── paths.py              # Path resolution (MODELS_DIR, dev vs deploy)
 │       │   │   └── settings.py           # JSON user config persistence
 │       │   └── UI/
-│       │       └── app.py                # Flet GUI (Hardware / Models / Server / Settings tabs)
+│       │       └── app.py                # Flet GUI (Hardware / Models / Server / Settings / Benchmark tabs)
 │       ├── scripts/
 │       │   └── install.py                # Cross-platform installer (GPU backend detection +
 │       │                                 #   llama-cpp-python[server] with correct CMAKE_ARGS)
@@ -135,7 +135,7 @@ cd test/prompts
 venv/bin/python3 app/main.py
 ```
 
-**GUI tabs:** Hardware Info → Model Browser (HuggingFace GGUF search with param-count filter) → Quantization Picker (with file sizes) → Download → Local Server (start/stop with nGpuLayers and nCtx controls).
+**GUI tabs:** Hardware Info → Model Browser (HuggingFace GGUF search with param-count filter) → Quantization Picker (with file sizes) → Download → Local Server (start/stop with nGpuLayers and nCtx controls) → Benchmark (side-by-side prompt testing across local .gguf models and external APIs).
 
 ### PyInstaller builds
 
