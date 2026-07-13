@@ -1,0 +1,68 @@
+schema: spec-driven
+
+context: |
+  Tech stack: Python 3.14.4, Flet 0.85.3, llama-cpp-python[server], huggingface_hub
+  Architecture: Procedural Flet GUI with module-level state singleton. api/local.py
+    provides hardware detection, HuggingFace model discovery, GGUF download, and
+    in-process AsyncLlamaServer. config/paths.py handles dev vs deploy paths.
+  Testing: None (no runner, no config, no test files).
+  CI: GitHub Actions multiplatform PyInstaller builds on test-prompts/v* tags.
+  Style: No linter, type checker, or formatter configured.
+  License: None declared.
+
+rules:
+  proposal:
+    - Include rollback plan for risky changes
+  specs:
+    - Use Given/When/Then for scenarios
+    - Use RFC 2119 keywords (MUST, SHALL, SHOULD, MAY)
+  design:
+    - Include sequence diagrams for complex flows
+    - Document architecture decisions with rationale
+  tasks:
+    - Group by phase, use hierarchical numbering
+    - Keep tasks completable in one session
+  apply:
+    guidelines:
+      - Follow existing procedural patterns in app/UI/app.py
+      - Respect dev vs deploy path logic in config/paths.py
+      - Keep async server lifecycle in api/local.py
+    tdd: false
+    test_command: ""
+  verify:
+    test_command: ""
+    build_command: "cd test/prompts && venv/bin/python3 -c 'import app.api.local; import app.config.paths; import app.config.settings; print(\"Import OK\")'"
+    coverage_threshold: 0
+  archive:
+    - Warn before merging destructive deltas
+
+testing:
+  strict_tdd: false
+  detected: 2026-07-12
+  runner:
+    available: false
+    command: ""
+    framework: "none"
+  layers:
+    unit:
+      available: false
+      tool: ""
+    integration:
+      available: false
+      tool: ""
+    e2e:
+      available: false
+      tool: ""
+  coverage:
+    available: false
+    command: ""
+  quality:
+    linter:
+      available: false
+      command: ""
+    type_checker:
+      available: false
+      command: ""
+    formatter:
+      available: false
+      command: ""
