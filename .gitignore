@@ -7,3 +7,10 @@
 
 #venv python
 **/*venv*/
+
+# Python cache
+**/__pycache__/
+**/*.pyc
+
+# Generated reports
+test/backend/outDir/

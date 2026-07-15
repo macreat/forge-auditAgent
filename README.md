@@ -74,6 +74,16 @@ forge-auditAgent/
 ├── test/
 │   ├── code/
 │   │   └── conftest.py                   # Pytest configuration
+│   ├── backend/                          # Notebook Audit & Construction Framework (CLI)
+│   │   ├── AuditFramework/               # 6-pass audit engine (Passes 1,2,5 mechanical; 3,4,6 semantic/LLM)
+│   │   ├── ConstructionFramework/        # 3-phase construction engine (Scaffold → Write → Validate)
+│   │   ├── nbs/                          # Sample notebooks for testing
+│   │   ├── corrections_templates.py      # 30+ structured correction templates with code examples
+│   │   ├── report_generator.py           # Markdown report generator for audit/construction
+│   │   ├── notebookAuditCLI.py           # Interactive CLI + batch mode
+│   │   ├── QUICK_REFERENCE.md            # CLI usage reference
+│   │   ├── START_HERE.md                 # Quick-start guide
+│   │   └── requirements.txt              # anthropic>=0.25.0 (for semantic passes)
 │   └── prompts/                          # Flet desktop app (see below)
 │       ├── app/
 │       │   ├── main.py                   # Dev entrypoint — launches Flet GUI
@@ -97,7 +107,7 @@ forge-auditAgent/
 │       ├── templates/                    # Experiment template JSON files
 │       ├── requirements.txt
 │       ├── test-prompts-app.spec         # PyInstaller spec (Flet app binary)
-│       └── test-prompts-installer.spec   # PyInstaller spec (installer binary)
+│       │   └── test-prompts-installer.spec   # PyInstaller spec (installer binary)
 ├── backend/                              # Future FastAPI backend
 ├── frontend/                             # Future Vite + React frontend
 ├── .agents/
@@ -181,6 +191,56 @@ LC_ALL=C.UTF-8 docs/venv/bin/python3 -m sphinx -b html docs docs/_build -W
 ```
 
 Dependencies: `huggingface_hub`, `psutil`, `GPUtil`, `llama-cpp-python[server]`, `ollama`. See `test/prompts/requirements.txt`.
+
+---
+
+## test/backend/ — Notebook Audit & Construction Framework (CLI)
+
+CLI tool implementing the 6-pass Audit Framework and 3-phase Construction Framework from the reference specifications (`reference/docs/mds/NotebookBuildAudit.md`).
+
+### Quick Start
+
+```bash
+cd test/backend
+
+# Interactive mode (menu-driven)
+python notebookAuditCLI.py
+
+# Or specific pass/phase
+python notebookAuditCLI.py --mode audit --notebook nbs/test_notebook.ipynb --pass 1
+python notebookAuditCLI.py --mode construction --notebook nbs/test_notebook.ipynb --phase 1
+
+# List available notebooks
+python notebookAuditCLI.py --list
+```
+
+### Dependencies
+
+- `test/backend/requirements.txt` — `anthropic>=0.25.0`
+- **Only required for semantic passes (3, 4, 6)** — Mechanical passes (1, 2, 5) use stdlib only
+
+### Features
+
+| Component | Passes/Phases | Description |
+|-----------|---------------|-------------|
+| **Audit Engine** | 1, 2, 5 (mechanical) | Structural Overview, Reproducibility, Code Quality — AST/JSON parsing only |
+| **Audit Engine** | 3, 4, 6 (semantic) | Data Integrity, ML Correctness, Deployment Readiness — LLM prompt templates ready |
+| **Construction Engine** | 1, 2, 3 | Scaffold → Write → Validate — checklist-driven with gate decisions |
+| **Reports** | — | Timestamped Markdown in `test/backend/outDir/` |
+| **Corrections** | — | 30+ templates with bad/good code examples and severity |
+
+### Sample Notebooks
+
+`test/backend/nbs/` — `hc-rf-1.ipynb`, `test_notebook.ipynb`
+
+### Reports Generated
+
+```
+audit_report_<notebook>_pass<1-6>_<timestamp>.md
+construction_report_<notebook>_phase<1-3>_<timestamp>.md
+```
+
+Each report includes: issues summary (sorted by severity), detailed corrections with code examples, gate decision (PROCEED/PROCEED_WITH_WARNINGS/BLOCK), and checklist.
 
 ---
 
