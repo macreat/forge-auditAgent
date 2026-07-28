@@ -2,7 +2,7 @@
 
 import json
 from pathlib import Path
-from app.config.paths import userConfigPath, ensureUserDirs, defaultModelsDir
+from app.config.paths import userConfigPath, ensureUserDirs, defaultModelsDir, defaultReportsDir
 
 _DEFAULTS = {
     "host": "127.0.0.1",
@@ -10,6 +10,7 @@ _DEFAULTS = {
     "nGpuLayers": 0,
     "nCtx": 2048,
     "modelsDir": str(defaultModelsDir()),
+    "reportsDir": str(defaultReportsDir()),
     "lastModelPath": "",
 }
 

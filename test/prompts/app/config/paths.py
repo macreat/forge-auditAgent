@@ -14,6 +14,7 @@ ROOT_DIR = APP_DIR.parent
 
 MODELS_DIR = ROOT_DIR / "models"
 NOTEBOOKS_DIR = ROOT_DIR / "notebooks"
+REPORTS_DIR = ROOT_DIR / "reports"
 
 _USER_BASE = Path(os.environ.get("TEST_PROMPTS_HOME", Path.home() / ".test-prompts"))
 
@@ -40,9 +41,20 @@ def userVenvDir():
     return _USER_BASE / "venv"
 
 
+def defaultReportsDir():
+    if isDeployed():
+        return userReportsDir()
+    return REPORTS_DIR
+
+
+def userReportsDir():
+    return _USER_BASE / "audit-reports"
+
+
 def ensureUserDirs():
     _USER_BASE.mkdir(parents=True, exist_ok=True)
     userModelsDir().mkdir(parents=True, exist_ok=True)
+    userReportsDir().mkdir(parents=True, exist_ok=True)
 
 
 def debugPaths():
@@ -53,5 +65,7 @@ def debugPaths():
     print(f"NOTEBOOKS_DIR: {NOTEBOOKS_DIR}")
     print(f"USER_BASE: {_USER_BASE}")
     print(f"USER_MODELS: {userModelsDir()}")
+    print(f"USER_REPORTS: {userReportsDir()}")
+    print(f"DEFAULT_REPORTS: {defaultReportsDir()}")
     print(f"USER_CONFIG: {userConfigPath()}")
     print(f"USER_VENV: {userVenvDir()}")

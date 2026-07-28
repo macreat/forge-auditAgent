@@ -23,6 +23,7 @@ pydantic==2.13.4
 pydantic_core==2.46.4
 PyYAML==6.0.3
 repath==0.9.0
+reportlab
 six==1.17.0
 tqdm==4.68.4
 typing-inspection==0.4.2

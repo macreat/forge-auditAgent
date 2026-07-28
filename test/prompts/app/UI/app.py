@@ -3,6 +3,7 @@
 Provides tabs for hardware info, model download, server control, and settings.
 """
 
+import datetime
 import os
 import flet as ft
 
@@ -14,7 +15,10 @@ from app.api.local import (
     downloadSelectedModel,
     AsyncLlamaServer,
 )
+from app.audit.export import to_json, to_pdf
+from app.audit.pipeline import AuditPipeline
 from app.config import settings
+from app.config.paths import defaultReportsDir
 
 
 class AppState:
@@ -434,7 +438,315 @@ def build(page: ft.Page):
         expand=True,
     )
 
-    panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel, benchmarkPanel]
+    # --- Audit Panel ---
+    _pass_labels = [
+        "Structural Overview",
+        "Reproducibility",
+        "Data Integrity",
+        "ML Correctness",
+        "Code Quality",
+        "Deployment Readiness",
+    ]
+
+    auditData = {"notebook": None, "report": None}
+
+    auditFilePicker = ft.FilePicker(on_result=lambda e: _on_file_picked(e))
+    githubUrlField = ft.TextField(
+        label="GitHub URL",
+        hint_text="https://raw.githubusercontent.com/...",
+        expand=True,
+        height=48,
+    )
+    loadBtn = ft.ElevatedButton("Load", on_click=lambda _: _load_source())
+
+    focusCheckboxes = ft.Column(spacing=4)
+    _focus_checks: list[ft.Checkbox] = []
+    for label in _pass_labels:
+        cb = ft.Checkbox(label=label, value=True)
+        _focus_checks.append(cb)
+        focusCheckboxes.controls.append(cb)
+
+    runAuditBtn = ft.ElevatedButton(
+        "Run Audit",
+        icon=ft.Icons.PLAY_ARROW,
+        on_click=lambda e: page.run_task(_run_audit, e),
+    )
+
+    resultsColumn = ft.Column(spacing=8, scroll=ft.ScrollMode.AUTO, expand=True)
+
+    exportPdfBtn = ft.ElevatedButton(
+        "Export PDF", on_click=lambda _: _export("pdf")
+    )
+    exportJsonBtn = ft.ElevatedButton(
+        "Export JSON", on_click=lambda _: _export("json")
+    )
+
+    auditStatus = ft.Text("")
+
+    def _on_file_picked(e):
+        if e.files and len(e.files) > 0:
+            path = e.files[0].path
+            auditStatus.value = f"Loading {path} ..."
+            page.update()
+            try:
+                from app.audit.loader import load_notebook
+
+                nb = load_notebook(path)
+                auditData["notebook"] = nb
+                if nb.valid:
+                    auditStatus.value = (
+                        f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
+                    )
+                else:
+                    auditStatus.value = (
+                        f"Error: {'; '.join(nb.validation_errors)}"
+                    )
+            except Exception as ex:
+                auditStatus.value = f"Error: {ex}"
+            page.update()
+
+    def _load_source():
+        url = githubUrlField.value.strip()
+        if not url:
+            auditStatus.value = "Enter a GitHub URL."
+            page.update()
+            return
+        auditStatus.value = "Fetching notebook ..."
+        page.update()
+        try:
+            from app.audit.loader import load_from_github
+
+            nb = load_from_github(url)
+            auditData["notebook"] = nb
+            if nb.valid:
+                auditStatus.value = (
+                    f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
+                )
+            else:
+                auditStatus.value = (
+                    f"Error: {'; '.join(nb.validation_errors)}"
+                )
+        except Exception as ex:
+            auditStatus.value = f"Error: {ex}"
+        page.update()
+
+    async def _run_audit(e):
+        nb = auditData["notebook"]
+        if nb is None:
+            auditStatus.value = "Load a notebook first."
+            page.update()
+            return
+
+        selected = [cb.label for cb in _focus_checks if cb.value]
+        focus = selected if len(selected) < len(_pass_labels) else None
+
+        resultsColumn.controls.clear()
+        auditStatus.value = "Starting audit ..."
+        page.update()
+
+        pipeline = AuditPipeline()
+
+        def progress_cb(result):
+            card = _build_result_card(result)
+            resultsColumn.controls.append(card)
+            auditStatus.value = (
+                f"Pass {result.pass_number}/6: "
+                f"{result.pass_name} - {result.status}"
+            )
+            page.update()
+
+        try:
+            report = pipeline.run(nb, focus_areas=focus, progress_cb=progress_cb)
+            auditData["report"] = report
+            auditStatus.value = (
+                f"Audit complete: {report.status} "
+                f"({len(report.passes)} passes)"
+            )
+        except Exception as ex:
+            auditStatus.value = f"Audit error: {ex}"
+        page.update()
+
+    def _build_result_card(result):
+        score_colors = {
+            "low": ft.Colors.GREEN_400,
+            "moderate": ft.Colors.ORANGE_400,
+            "high": ft.Colors.RED_400,
+        }
+        sc = result.score.lower() if result.score else ""
+        score_color = score_colors.get(sc, ft.Colors.GREY_400)
+
+        badge = ft.Container(
+            content=ft.Text(
+                result.score.upper() if result.score else result.status.upper(),
+                color=ft.Colors.WHITE,
+                weight=ft.FontWeight.BOLD,
+                size=11,
+            ),
+            bgcolor=score_color,
+            padding=ft.Padding(left=8, right=8, top=3, bottom=3),
+            border_radius=4,
+        )
+
+        findings_count = len(result.findings)
+        detail_content = ft.Column(spacing=4)
+
+        if result.status == "error":
+            detail_content.controls.append(
+                ft.Text(result.deliverable_text, color=ft.Colors.RED_400)
+            )
+        elif result.findings:
+            icon_map = {
+                "error": ft.Icons.ERROR,
+                "warning": ft.Icons.WARNING,
+                "info": ft.Icons.INFO,
+            }
+            color_map = {
+                "error": ft.Colors.RED_400,
+                "warning": ft.Colors.ORANGE_400,
+                "info": ft.Colors.BLUE_400,
+            }
+            for finding in result.findings:
+                cell_ref = (
+                    f"Cell {finding.cell_index}"
+                    if finding.cell_index is not None
+                    else "Notebook"
+                )
+                detail_content.controls.append(
+                    ft.Row(
+                        [
+                            ft.Icon(
+                                icon_map.get(
+                                    finding.severity, ft.Icons.CIRCLE
+                                ),
+                                size=16,
+                                color=color_map.get(
+                                    finding.severity, ft.Colors.GREY_400
+                                ),
+                            ),
+                            ft.Text(
+                                f"[{cell_ref}] [{finding.category}] "
+                                f"{finding.message}",
+                                size=12,
+                                expand=True,
+                            ),
+                        ],
+                        spacing=4,
+                    )
+                )
+        else:
+            detail_content.controls.append(
+                ft.Text("No findings.", size=12)
+            )
+
+        return ft.Container(
+            content=ft.Column(
+                [
+                    ft.Row(
+                        [
+                            badge,
+                            ft.Text(
+                                f"Pass {result.pass_number}: "
+                                f"{result.pass_name}",
+                                weight=ft.FontWeight.BOLD,
+                                expand=True,
+                            ),
+                        ]
+                    ),
+                    ft.Text(
+                        f"{findings_count} finding(s) - {result.status}",
+                        size=12,
+                        color=ft.Colors.GREY_400,
+                    ),
+                    ft.ExpansionTile(
+                        title=ft.Text("Details"),
+                        affinity=ft.TileAffinity.LEADING,
+                        initially_expanded=False,
+                        controls=[detail_content],
+                    ),
+                ]
+            ),
+            padding=10,
+            border=ft.Border(
+                top=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                left=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                right=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+                bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT),
+            ),
+            border_radius=8,
+            margin=ft.Margin(left=0, top=0, right=0, bottom=8),
+        )
+
+    def _export(fmt):
+        report = auditData["report"]
+        nb = auditData["notebook"]
+        if report is None or nb is None:
+            auditStatus.value = "Run an audit first."
+            page.update()
+            return
+        cfg_settings = settings.load()
+        reports_dir = cfg_settings.get(
+            "reportsDir", str(defaultReportsDir())
+        )
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_name = nb.filename.replace(".ipynb", "").replace(" ", "_")
+
+        ext = "json" if fmt == "json" else "pdf"
+        path = f"{reports_dir}/{safe_name}_{timestamp}.{ext}"
+        try:
+            if fmt == "json":
+                to_json(report, path)
+            else:
+                to_pdf(report, path)
+            auditStatus.value = f"Exported: {path}"
+        except Exception as ex:
+            auditStatus.value = f"Export error: {ex}"
+        page.update()
+
+    auditPanel = ft.Column(
+        [
+            ft.Text("Notebook Audit", weight=ft.FontWeight.BOLD, size=16),
+            ft.Divider(),
+            ft.Row(
+                [
+                    ft.ElevatedButton(
+                        "Open File",
+                        on_click=lambda _: auditFilePicker.pick_files(
+                            allowed_extensions=["ipynb"],
+                            dialog_title="Select Jupyter Notebook",
+                        ),
+                    ),
+                    githubUrlField,
+                    loadBtn,
+                ]
+            ),
+            ft.Divider(),
+            ft.Text("Focus Areas:", weight=ft.FontWeight.BOLD),
+            focusCheckboxes,
+            ft.Divider(),
+            ft.Row(
+                [
+                    runAuditBtn,
+                    auditStatus,
+                ]
+            ),
+            ft.Divider(),
+            resultsColumn,
+            ft.Divider(),
+            ft.Row(
+                [
+                    exportPdfBtn,
+                    exportJsonBtn,
+                ]
+            ),
+        ],
+        spacing=8,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+    page.overlay.append(auditFilePicker)
+
+    panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel, benchmarkPanel, auditPanel]
 
     tabs = ft.Tabs(
         selected_index=0,
@@ -450,6 +762,7 @@ def build(page: ft.Page):
                         ft.Tab(label="Server"),
                         ft.Tab(label="Settings"),
                         ft.Tab(label="Benchmark"),
+                        ft.Tab(label="Audit"),
                     ],
                 ),
                 ft.TabBarView(
