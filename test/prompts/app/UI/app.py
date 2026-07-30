@@ -5,6 +5,8 @@ Provides tabs for hardware info, model download, server control, and settings.
 
 import datetime
 import os
+from pathlib import Path
+
 import flet as ft
 
 from app.api.local import (
@@ -450,7 +452,79 @@ def build(page: ft.Page):
 
     auditData = {"notebook": None, "report": None}
 
-    auditFilePicker = ft.FilePicker(on_result=lambda e: _on_file_picked(e))
+    # --- Source: local path ---
+    localPathField = ft.TextField(
+        label="Local path",
+        hint_text="/path/to/notebook.ipynb",
+        expand=True,
+        height=48,
+    )
+    loadLocalBtn = ft.ElevatedButton(
+        "Load Local",
+        on_click=lambda _: _load_local(),
+    )
+
+    # --- Source: notebooks database ---
+    # Path: test/prompts/notebooks/  (__file__ is app/UI/app.py → up 3 levels to test/prompts/)
+    _NB_DB_DIR = Path(__file__).resolve().parents[2] / "notebooks"
+
+    notebookDropdown = ft.Dropdown(
+        label="Notebook DB",
+        hint_text="Pick a notebook...",
+        options=[],
+        expand=True,
+        height=48,
+    )
+    notebookDropdown.on_change = lambda e: _load_from_db(e)
+
+    def _scan_notebooks_db():
+        notebookDropdown.options.clear()
+        nb_dir = _NB_DB_DIR
+        if not nb_dir.is_dir():
+            auditStatus.value = f"Notebook DB not found: {nb_dir}"
+            page.update()
+            return
+        # Collect .ipynb, .py, and other text-based files
+        files = sorted(nb_dir.iterdir(), key=lambda p: p.name)
+        for f in files:
+            if f.is_file() and f.suffix in (".ipynb", ".py", ".md", ".txt"):
+                notebookDropdown.options.append(
+                    ft.DropdownOption(key=str(f), text=f.name)
+                )
+        if notebookDropdown.options:
+            notebookDropdown.value = notebookDropdown.options[0].key
+            auditStatus.value = f"Found {len(notebookDropdown.options)} file(s) in notebooks DB"
+            # Auto-load the first one
+            _load_notebook_from_path(notebookDropdown.options[0].key)
+        else:
+            auditStatus.value = "No notebook files found in DB directory."
+        page.update()
+
+    def _load_from_db(e):
+        if notebookDropdown.value:
+            _load_notebook_from_path(notebookDropdown.value)
+
+    def _load_notebook_from_path(path: str):
+        auditStatus.value = f"Loading {Path(path).name} ..."
+        page.update()
+        try:
+            from app.audit.loader import load_notebook
+
+            nb = load_notebook(path)
+            auditData["notebook"] = nb
+            if nb.valid:
+                auditStatus.value = (
+                    f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
+                )
+            else:
+                auditStatus.value = (
+                    f"Error: {'; '.join(nb.validation_errors)}"
+                )
+        except Exception as ex:
+            auditStatus.value = f"Error: {ex}"
+        page.update()
+
+    # --- Source: GitHub URL ---
     githubUrlField = ft.TextField(
         label="GitHub URL",
         hint_text="https://raw.githubusercontent.com/...",
@@ -459,6 +533,57 @@ def build(page: ft.Page):
     )
     loadBtn = ft.ElevatedButton("Load", on_click=lambda _: _load_source())
 
+    def _normalize_github_url(url: str) -> str:
+        """Convert a regular GitHub blob URL to a raw.githubusercontent.com URL."""
+        # Already a raw URL
+        if "raw.githubusercontent.com" in url:
+            return url
+        # Convert github.com/user/repo/blob/branch/path -> raw
+        import re
+
+        m = re.match(
+            r"https?://github\.com/([^/]+/[^/]+)/blob/([^/]+)/(.+)", url
+        )
+        if m:
+            return f"https://raw.githubusercontent.com/{m.group(1)}/{m.group(2)}/{m.group(3)}"
+        return url
+
+    def _load_source():
+        url = githubUrlField.value.strip()
+        if not url:
+            auditStatus.value = "Enter a GitHub URL."
+            page.update()
+            return
+        raw_url = _normalize_github_url(url)
+        auditStatus.value = "Fetching notebook ..."
+        page.update()
+        try:
+            from app.audit.loader import load_from_github
+
+            nb = load_from_github(raw_url)
+            auditData["notebook"] = nb
+            if nb.valid:
+                auditStatus.value = (
+                    f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
+                )
+            else:
+                auditStatus.value = (
+                    f"Error loading: {'; '.join(nb.validation_errors)}"
+                )
+        except Exception as ex:
+            auditStatus.value = f"Error: {ex}"
+        page.update()
+
+    # --- Local path loading ---
+    def _load_local():
+        path = localPathField.value.strip()
+        if not path:
+            auditStatus.value = "Enter a file path."
+            page.update()
+            return
+        _load_notebook_from_path(path)
+
+    # --- Audit execution ---
     focusCheckboxes = ft.Column(spacing=4)
     _focus_checks: list[ft.Checkbox] = []
     for label in _pass_labels:
@@ -482,53 +607,6 @@ def build(page: ft.Page):
     )
 
     auditStatus = ft.Text("")
-
-    def _on_file_picked(e):
-        if e.files and len(e.files) > 0:
-            path = e.files[0].path
-            auditStatus.value = f"Loading {path} ..."
-            page.update()
-            try:
-                from app.audit.loader import load_notebook
-
-                nb = load_notebook(path)
-                auditData["notebook"] = nb
-                if nb.valid:
-                    auditStatus.value = (
-                        f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
-                    )
-                else:
-                    auditStatus.value = (
-                        f"Error: {'; '.join(nb.validation_errors)}"
-                    )
-            except Exception as ex:
-                auditStatus.value = f"Error: {ex}"
-            page.update()
-
-    def _load_source():
-        url = githubUrlField.value.strip()
-        if not url:
-            auditStatus.value = "Enter a GitHub URL."
-            page.update()
-            return
-        auditStatus.value = "Fetching notebook ..."
-        page.update()
-        try:
-            from app.audit.loader import load_from_github
-
-            nb = load_from_github(url)
-            auditData["notebook"] = nb
-            if nb.valid:
-                auditStatus.value = (
-                    f"Loaded: {nb.filename} ({len(nb.cells)} cells)"
-                )
-            else:
-                auditStatus.value = (
-                    f"Error: {'; '.join(nb.validation_errors)}"
-                )
-        except Exception as ex:
-            auditStatus.value = f"Error: {ex}"
-        page.update()
 
     async def _run_audit(e):
         nb = auditData["notebook"]
@@ -638,6 +716,14 @@ def build(page: ft.Page):
                 ft.Text("No findings.", size=12)
             )
 
+        expander = ft.ExpansionTile(
+            title=ft.Text("Details"),
+            affinity=ft.TileAffinity.LEADING,
+            controls=[detail_content],
+        )
+        # Set after creation for Flet 0.85.x compatibility
+        expander.initially_expanded = False
+
         return ft.Container(
             content=ft.Column(
                 [
@@ -657,12 +743,7 @@ def build(page: ft.Page):
                         size=12,
                         color=ft.Colors.GREY_400,
                     ),
-                    ft.ExpansionTile(
-                        title=ft.Text("Details"),
-                        affinity=ft.TileAffinity.LEADING,
-                        initially_expanded=False,
-                        controls=[detail_content],
-                    ),
+                    expander,
                 ]
             ),
             padding=10,
@@ -706,15 +787,23 @@ def build(page: ft.Page):
         [
             ft.Text("Notebook Audit", weight=ft.FontWeight.BOLD, size=16),
             ft.Divider(),
+            # Row 1: Notebooks DB scanner
             ft.Row(
                 [
-                    ft.ElevatedButton(
-                        "Open File",
-                        on_click=lambda _: auditFilePicker.pick_files(
-                            allowed_extensions=["ipynb"],
-                            dialog_title="Select Jupyter Notebook",
-                        ),
-                    ),
+                    ft.ElevatedButton("Scan DB", on_click=lambda _: _scan_notebooks_db()),
+                    notebookDropdown,
+                ]
+            ),
+            # Row 2: Local path
+            ft.Row(
+                [
+                    localPathField,
+                    loadLocalBtn,
+                ]
+            ),
+            # Row 3: GitHub URL
+            ft.Row(
+                [
                     githubUrlField,
                     loadBtn,
                 ]
@@ -743,8 +832,6 @@ def build(page: ft.Page):
         scroll=ft.ScrollMode.AUTO,
         expand=True,
     )
-
-    page.overlay.append(auditFilePicker)
 
     panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel, benchmarkPanel, auditPanel]
 
