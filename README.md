@@ -59,15 +59,26 @@ forge-auditAgent/
 │   │   ├── mds/                          # Markdown specifications
 │   │   │   ├── NotebookBuildAudit.md     # Authoritative Construction & Audit Framework
 │   │   │   ├── InitialProposalDev.md     # Commercial development proposal
+│   │   │   ├── paperRequirementsDoc.md   # Product requirements doc (Agentic AI)
+│   │   │   ├── PRD-AgenticAI-Modular.md  # 28 FRs across 8 modules
+│   │   │   ├── Requirements-AgenticAI.md # SRS: 18 FRs, 10 NFRs, 13 TCs
 │   │   │   └── basis.md                  # Early design notes (superseded)
 │   │   ├── latex/                        # Formal LaTeX specifications
 │   │   │   ├── NotebookBuildAudit.tex    # Full spec with diagrams, prompt templates
 │   │   │   ├── InitialProposalDev.tex    # Commercial development proposal
+│   │   │   ├── requirementsDoc/
+│   │   │   │   ├── paperRequirementsDoc.tex     # Requirements paper (article class)
+│   │   │   │   └── forge-auditAgent-requirements.tex  # Presentation (11pt, 19pp)
 │   │   │   └── basis.tex                 # Early prompt draft iterations (superseded)
 │   │   ├── pdfs/                         # Compiled PDFs
 │   │   │   ├── NotebookBuildAudit.pdf
 │   │   │   └── InitialProposalDev.pdf
-│   │   └── imgs/                         # Diagram source images
+│   │   └── imgs/
+│   │       ├── prd/                      # Requirements paper diagrams
+│   │       │   ├── arquitecturaAltoNivel.png
+│   │       │   ├── pipelineAuditoria.png
+│   │       │   └── LLMStrategyPattern.png
+│   │       └── ...                        # Diagram source images
 │   └── flags/
 │       ├── README.md
 │       └── flags.md                      # Developer task tracking
@@ -276,6 +287,11 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 - [NotebookBuildAudit.md](reference/docs/mds/NotebookBuildAudit.md) — complete Construction and Audit Framework specification
 - [NotebookBuildAudit.tex](reference/docs/latex/NotebookBuildAudit.tex) — formal LaTeX with diagrams and prompt templates
+- [paperRequirementsDoc.md](reference/docs/mds/paperRequirementsDoc.md) — product requirements doc (Agentic AI protocol, 20 sections)
+- [paperRequirementsDoc.tex](reference/docs/latex/requirementsDoc/paperRequirementsDoc.tex) — LaTeX compilation, article-class, diagram placeholders
+- [forge-auditAgent-requirements.tex](reference/docs/latex/requirementsDoc/forge-auditAgent-requirements.tex) — requirements presentation, 11pt, 19pp
+- [PRD-AgenticAI-Modular.md](reference/docs/mds/PRD-AgenticAI-Modular.md) — standalone PRD with 28 FRs across 8 modules
+- [Requirements-AgenticAI.md](reference/docs/mds/Requirements-AgenticAI.md) — SRS with 18 FRs, 10 NFRs, 13 TCs
 - [InitialProposalDev.md](reference/docs/mds/InitialProposalDev.md) — commercial development proposal
 - [AGENTS.md](AGENTS.md) — agent onboarding and repo guide
 - [flags.md](reference/flags/flags.md) — developer task tracking
@@ -284,7 +300,7 @@ From `InitialProposalDev.md` — the implementation plan targets:
 
 ## Repo Status
 
-This is a design/documentation project with an active prototype. Runnable code lives in `test/prompts/` (see above) — a working Flet desktop GUI for hardware detection, GGUF model download, and local LLM inference. Sphinx documentation is set up under `test/prompts/docs/`. CI/CD is configured via GitHub Actions (`test-prompts/v*` tags trigger multiplatform PyInstaller builds). No linting or test suite yet. Full-stack implementation roadmap is outlined below.
+This is a design/documentation project with an active prototype. Runnable code lives in `test/prompts/` (see above) — a working Flet desktop GUI for hardware detection, GGUF model download, and local LLM inference. A CLI audit/construction framework lives in `test/backend/`. Product requirements documents (20-section paper, PRD with 28 FRs, SRS with 18 FRs + 10 NFRs + 13 TCs) are published under `reference/docs/`. Sphinx documentation is set up under `test/prompts/docs/`. CI/CD is configured via GitHub Actions (`test-prompts/v*` tags trigger multiplatform PyInstaller builds). No linting or test suite yet. Full-stack implementation roadmap is outlined below.
 
 ---
 
