@@ -1,0 +1,332 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{metropolis}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{frametitle}{bg=black!85, fg=white}
+\setbeamerfont{frametitle}{size=\large}
+\setbeamertemplate{caption}{\raggedright\insertcaption\par}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{amsmath}
+\usepackage{ragged2e}
+\usepackage{tabularx}
+
+\definecolor{accent}{HTML}{005A9E}
+\definecolor{accent2}{HTML}{0078D4}
+\definecolor{passgreen}{HTML}{2D7D46}
+\definecolor{warnyellow}{HTML}{8A6D00}
+\definecolor{failred}{HTML}{A80000}
+
+\title{forge-auditAgent}
+\subtitle{Requirements Specification --- Modular Agentic AI Environment}
+\date{July 2026}
+\author{Requirements Document v1.0}
+
+\begin{document}
+
+\maketitle
+
+% ==================== SECTION 1: PROBLEM ====================
+\section{Problem \& Scope}
+
+\begin{frame}{Problem Statement}
+  \textbf{The challenge:} Jupyter Notebooks are the de facto standard for data science and ML, yet they introduce systemic risks:
+
+  \begin{itemize}
+    \item Untrusted execution --- no deterministic guarantee of safety or correctness
+    \item No structured audit protocol --- existing code review misses notebook-specific failure modes
+    \item Data leakage through preprocessing ordering
+    \item Cross-validation contamination
+    \item Inseparable training/inference logic
+    \item Hidden global state across cells
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Goal:} A modular, local-first generative AI agent environment for notebook construction and audit.
+\end{frame}
+
+\begin{frame}{System Overview}
+  \small
+  \textbf{forge-auditAgent} operates on two integrated tracks:
+
+  \vspace{0.3em}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \textbf{Construction Workbench}
+      \begin{enumerate}
+\setlength\itemsep{0pt}
+        \item \textbf{Scaffold} --- section templates, dependency pinning, seed config
+        \item \textbf{Write} --- incremental authoring, explicit state
+        \item \textbf{Validate} --- kernel restart, cell idempotency
+      \end{enumerate}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \textbf{Audit Engine (6 passes)}
+      \begin{enumerate}
+\setlength\itemsep{0pt}
+        \item Structural Overview
+        \item Reproducibility Check
+        \item Data Integrity Review
+        \item ML Correctness Audit
+        \item Code Quality Review
+        \item Deployment Readiness
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+
+  \vspace{0.5em}
+  Both powered by a \textbf{provider-agnostic LLM orchestration layer} (llama.cpp, Ollama, OpenAI) under the LLM-as-a-Judge paradigm.
+\end{frame}
+
+% ==================== SECTION 2: ARCHITECTURE ====================
+\section{System Architecture}
+
+\begin{frame}{Hardware Architecture (Current Desktop)}
+  \centering
+  \footnotesize
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Component} & \textbf{Specification} \\
+    \midrule
+    CPU & x86\_64 / ARM64 \\
+    RAM & $\geq$ 8 GB (recommended) \\
+    GPU & Optional: Metal, CUDA, ROCm \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{0.5em}
+  \textbf{Execution flow:}
+
+  \smallskip
+  \noindent\rule{\textwidth}{0.4pt}
+  \footnotesize
+  \texttt{User Machine} \\
+  \hspace{1em}$\rightarrow$ Flet Desktop App (test/prompts/) \\
+  \hspace{2em}$\rightarrow$ Hardware Detection \\
+  \hspace{2em}$\rightarrow$ Model Download (HuggingFace Hub) \\
+  \hspace{2em}$\rightarrow$ Local LLM Server (llama-cpp-python) \\
+  \hspace{2em}$\rightarrow$ Audit Pipeline (6 passes) \\
+  \hspace{2em}$\rightarrow$ Export (JSON / MD / PDF) \\
+  \noindent\rule{\textwidth}{0.4pt}
+\end{frame}
+
+\begin{frame}{Software Architecture}
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Layer} & \textbf{Components} \\
+    \midrule
+    \multirow{3}{*}{GUI (Flet)} & Hardware, Models, Server tabs \\
+    & Benchmark, Settings tabs \\
+    & \textbf{Audit tab}: Loader $\rightarrow$ Pipeline $\rightarrow$ Export \\
+    \cmidrule{2-2}
+    \multirow{3}{*}{LLM Layer} & llama-cpp-python (in-process) \\
+    & Ollama API (local) \\
+    & OpenAI API (cloud, opt-in) \\
+    \cmidrule{2-2}
+    Persistence & Engram memory, JSON config, reports \\
+    \bottomrule
+  \end{tabular}
+
+  \vspace{1em}
+  \textbf{Audit pipeline flow:}
+  \[
+  \text{Notebook} \rightarrow
+  \underset{\text{Pass 1}}{\text{Structural}} \rightarrow
+  \underset{\text{Pass 2}}{\text{Reproducibility}} \\
+  \rightarrow
+  \underset{\text{Pass 3}}{\text{Data Integrity}} \rightarrow
+  \underset{\text{Pass 4}}{\text{ML Correctness}} \rightarrow
+  \underset{\text{Pass 5}}{\text{Code Quality}} \rightarrow
+  \underset{\text{Pass 6}}{\text{Deployment}}
+  \]
+\end{frame}
+
+% ==================== SECTION 3: FUNCTIONAL REQUIREMENTS ====================
+\section{Functional Requirements}
+
+\begin{frame}[shrink]{Functional Requirements --- Loading and Input (RF-01 to RF-04)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.85}
+  \begin{tabularx}{\textwidth}{c X p{5.5cm}}
+    \toprule
+    \textbf{ID} & \textbf{Description} & \textbf{Acceptance Criteria} \\
+    \midrule
+    RF-01 & Load and parse \texttt{.ipynb} files from local filesystem; validate JSON structure, cell types, and metadata. & Valid $\rightarrow$ \texttt{Notebook(valid=True)}; malformed $\rightarrow$ \texttt{valid=False} with errors. \\
+    \cmidrule{2-3}
+    RF-02 & Fetch notebooks from GitHub raw URLs; auto-convert \texttt{github.com/blob/} to \texttt{raw.githubusercontent.com/}. & Normalised URL resolves; parsed notebook matches expected structure. \\
+    \cmidrule{2-3}
+    RF-03 & Scan local notebooks directory and present files in a dropdown (extensions: \texttt{.ipynb}, \texttt{.py}, \texttt{.md}, \texttt{.txt}). & All matching files found; first valid notebook auto-loaded. \\
+    \cmidrule{2-3}
+    RF-04 & Guide notebook authoring through 3-phase Construction Workbench (Scaffold $\rightarrow$ Write $\rightarrow$ Validate). & Each phase visually distinct; canonical 8-section header order enforced. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}[shrink]{Functional Requirements --- Audit Engine (RF-05 to RF-11)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.85}
+  \begin{tabularx}{\textwidth}{c X p{4.5cm}}
+    \toprule
+    \textbf{ID} & \textbf{Description} & \textbf{Acceptance Criteria} \\
+    \midrule
+    RF-05 & Execute six sequential audit passes, each with structured deliverable and risk score (L/M/H). & All passes run; each returns \texttt{PassResult} with required fields. \\
+    \cmidrule{2-3}
+    RF-06 & Pass 1: Section map, red flags, focus-area scope. & Headers identified; broken imports, orphaned cells flagged. \\
+    \cmidrule{2-3}
+    RF-07 & Pass 2: Dependency pinning, seeds, hardcoded paths, re-executability. & Risk score computed; dependency file and seed calls verified. \\
+    \cmidrule{2-3}
+    RF-08 & Pass 3: Train/test split ordering, leakage, missing data, ingestion validation. & Split-before-preprocessing enforced; leakage patterns flagged. \\
+    \cmidrule{2-3}
+    RF-09 & Pass 4: Metric appropriateness, CV integrity, hyperparameter boundaries, baseline. & Checklist produced; CV leakage detected; baseline required. \\
+    \cmidrule{2-3}
+    RF-10 & Pass 5: Repetitive code ($\geq$3), dead code, naming, output hygiene. & Smell report; repetition threshold enforced; bloated outputs flagged. \\
+    \cmidrule{2-3}
+    RF-11 & Pass 6: Artifact export, separability, resource docs, environment, privacy. & Risk score; artifact versioning and separation verified. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}[shrink]{Functional Requirements --- LLM and Export (RF-12 to RF-18)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.85}
+  \begin{tabularx}{\textwidth}{c X p{4.5cm}}
+    \toprule
+    \textbf{ID} & \textbf{Description} & \textbf{Acceptance Criteria} \\
+    \midrule
+    RF-12 & Hybrid evaluation: deterministic checks for objective criteria; LLM judging for subjective. & Deterministic checks run without API calls; LLM routes through configured provider. \\
+    \cmidrule{2-3}
+    RF-13 & Support three LLM providers (llama.cpp, Ollama, OpenAI) interchangeable via strategy pattern. & Each returns valid evaluation for identical prompts; switching does not require restart. \\
+    \cmidrule{2-3}
+    RF-14 & Real-time audit progress via callback or SSE; one event per completed pass. & Callback fires after each pass; UI updates within 500\,ms. \\
+    \cmidrule{2-3}
+    RF-15 & Export reports in JSON, Markdown, and PDF formats. & Each export produces a valid file at the specified path. \\
+    \cmidrule{2-3}
+    RF-16 & Notebook DB scanner listing and loading files from \texttt{test/prompts/notebooks/}. & Populates dropdown on click; first valid file auto-loads. \\
+    \cmidrule{2-3}
+    RF-17 & Accept manual local file paths and load valid notebooks. & Path + ``Load Local'' loads notebook or returns clear error. \\
+    \cmidrule{2-3}
+    RF-18 & Full offline operation for local-only operations. & Core functions work without internet; cloud LLM is opt-in. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+% ==================== SECTION 4: NON-FUNCTIONAL ====================
+\section{Non-Functional Requirements}
+
+\begin{frame}[shrink]{Non-Functional Requirements (RNF-01 to RNF-10)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.85}
+  \begin{tabularx}{\textwidth}{c X p{4.5cm}}
+    \toprule
+    \textbf{ID} & \textbf{Description} & \textbf{Acceptance Criteria} \\
+    \midrule
+    RNF-01 & Cross-platform: Linux (WSL, native), macOS, Windows; GPU: Metal, CUDA, ROCm. & Launches and core features work on all three platforms. \\
+    \cmidrule{2-3}
+    RNF-02 & Start to interactive within 5\,s ($\geq$8\,GB RAM, SSD). & Measured from \texttt{python main.py} to responsive UI. \\
+    \cmidrule{2-3}
+    RNF-03 & Local LLM response $\leq$30\,s for $\leq$7B models on CUDA GPU. & Mean over 10 audit runs $\leq$30\,s. \\
+    \cmidrule{2-3}
+    RNF-04 & Graceful handling of missing optional deps; no startup crash. & Starts with features disabled; no traceback. \\
+    \cmidrule{2-3}
+    RNF-05 & Full 6-pass audit for $\leq$50 cells in $\leq$120\,s (deterministic + 7B local model). & End-to-end from Run Audit click. \\
+    \cmidrule{2-3}
+    RNF-06 & All user data stays local by default; zero egress without explicit action. & No outbound requests during local operations. \\
+    \cmidrule{2-3}
+    RNF-07 & No UI freezes beyond 200\,ms during audit execution. & Frame drops measured during pipeline run. \\
+    \cmidrule{2-3}
+    RNF-08 & LLM provider extensible via Open/Closed Principle. & New provider = new class implementing \texttt{LLMProvider}. \\
+    \cmidrule{2-3}
+    RNF-09 & All audit results persisted for later review. & Reports accessible after restart; timestamped. \\
+    \cmidrule{2-3}
+    RNF-10 & RAM consumption $\leq$4\,GB above baseline (excluding LLM model). & Measured via \texttt{psutil} during full audit. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+% ==================== SECTION 5: VERIFICATION ====================
+\section{Verification Plan}
+
+\begin{frame}[shrink]{Verification Plan (TC-01 to TC-06)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.8}
+  \begin{tabularx}{\textwidth}{c c X}
+    \toprule
+    \textbf{ID} & \textbf{Req} & \textbf{Objective / Procedure} \\
+    \midrule
+    TC-01 & RF-01 & Load valid and malformed notebooks; verify \texttt{valid=True/False} with appropriate errors. \\
+    TC-02 & RF-02 & Enter \texttt{github.com/user/repo/blob/main/test.ipynb}; verify URL normalisation and load. \\
+    TC-03 & RF-16 & Click Scan DB; verify dropdown populated and first notebook auto-loaded. \\
+    TC-04 & RF-05 & Load sample notebook, select all focus areas, run audit; verify 6 result cards. \\
+    TC-05 & RF-12 & Run audit with local LLM; verify deterministic checks pass without API calls. \\
+    TC-06 & RF-15 & After audit, export JSON; verify valid file at expected path. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}[shrink]{Verification Plan (TC-07 to TC-13)}
+  \centering
+  \scriptsize
+  \renewcommand{\arraystretch}{0.8}
+  \begin{tabularx}{\textwidth}{c c X}
+    \toprule
+    \textbf{ID} & \textbf{Req} & \textbf{Objective / Procedure} \\
+    \midrule
+    TC-07 & RF-15 & After audit, export PDF; verify valid PDF with formatted report. \\
+    TC-08 & RF-17 & Type path to \texttt{.ipynb} in Local path, click Load Local; verify load and cell count. \\
+    TC-09 & RF-18 & Disconnect network; verify core functions work, cloud features show unavailable. \\
+    TC-10 & RNF-04 & Run on machine without GPU libs; verify app starts gracefully. \\
+    TC-11 & RNF-06 & Run full local audit while monitoring network; verify zero outbound connections. \\
+    TC-12 & RNF-09 & Restart app; verify all previous audit reports present and readable. \\
+    TC-13 & RNF-10 & Run full audit monitoring RAM via \texttt{psutil}; verify $\leq$4\,GB above baseline. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+% ==================== SECTION 6: JUSTIFICATION ====================
+\section{Justification}
+
+\begin{frame}[shrink]{Justification}
+  \centering
+  \footnotesize
+  \renewcommand{\arraystretch}{0.85}
+  \begin{tabularx}{\textwidth}{l X}
+    \toprule
+    \textbf{Criterion} & \textbf{Compliance} \\
+    \midrule
+    Problem statement & Notebook reproducibility crisis and lack of structured audit clearly identified with concrete failure modes. \\
+    \cmidrule{2-2}
+    System cohesion & Construction Framework, Audit Engine, and LLM Orchestration form a closed feedback loop: build $\rightarrow$ audit $\rightarrow$ improve. \\
+    \cmidrule{2-2}
+    Measurable requirements & All RF/RNF quantified with specific acceptance criteria; IDs cross-referenced to verification tests. \\
+    \cmidrule{2-2}
+    Architecture clarity & Hardware and software diagrams document current implementation; strategy pattern ensures extensibility. \\
+    \cmidrule{2-2}
+    Verification plan & 13 test cases covering all functional and key non-functional requirements with procedures and priorities. \\
+    \cmidrule{2-2}
+    Local-first design & All core operations run offline with zero data egress; cloud LLM is strictly opt-in. \\
+    \bottomrule
+  \end{tabularx}
+\end{frame}
+
+\begin{frame}[standout]
+  \centering
+  \LARGE forge-auditAgent\\[0.1em]
+  \normalsize Requirements Specification v1.0
+
+  \vspace{0.5em}
+  \small Modular Agentic AI Environment --- July 2026
+\end{frame}
+
+\end{document}
