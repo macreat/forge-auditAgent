@@ -1,0 +1,246 @@
+\documentclass[
+11pt,notheorems,hyperref={pdfauthor=whatever}
+]{beamer}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx} % For including images
+\usepackage{amsmath} % For math formulas
+\usepackage{hyperref} % For hyperlinks
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{ragged2e}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, shapes.geometric}
+
+
+% Title page details
+\title[Agentic AI]{Learning Agentic AI}
+ 
+\begin{document}
+\section{Introduction}	
+
+% Title slide
+\begin{frame}{Learning Agentic AI}
+	\textsl{Agentic AI} refers to an AI system in which one or more specialized \textbf{AI agents} autonomously pursue goals by coordinating reasoning, tool use, memory, and action. Unlike passive chatbots, such a system can plan, invoke external tools, monitor outcomes, and complete multi-step tasks with minimal human intervention, except at predefined high-stakes checkpoints governed by Human-in-the-Loop (HITL) protocols.
+	
+	\vspace*{.9cm}
+	
+	By coordinating agents, tools, and feedback loops, Agentic AI can adapt to different scenarios, make context-aware decisions, and efficiently manage workflows to achieve specific, high-level goals.
+\end{frame}
+
+\begin{frame}{Why Agentic AI?}
+	Agentic AI moves beyond static automation by delivering systems that 
+	\textbf{adapt}, \textbf{recover}, and \textbf{improve} with minimal ongoing supervision.
+	
+	\vspace{0.3cm}
+	
+	\textbf{Core Value Proposition:}
+	\begin{itemize}
+		\item \textbf{Operational leverage:} Handle complex, variable workloads that resist hard-coded rules.
+		\item \textbf{Fault resilience:} Detect mismatches between intent and outcome, then self-correct or escalate.
+		\item \textbf{Compounding returns:} Each execution cycle refines strategy and memory, improving performance over time.
+	\end{itemize}
+	
+	\vspace{0.3cm}
+	
+	\textbf{Where it delivers:}
+	\begin{itemize}
+		\item Autonomous research and multi-source synthesis
+		\item Proactive monitoring and exception handling
+		\item Dynamic resource allocation and scheduling
+		\item End-to-end workflow orchestration
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Building Blocks of Agentic AI}
+	\begin{description}
+		\item[\textsl{1. Goal Definition}] Define clear, measurable objectives and success criteria.
+		\item[\textsl{2. Task Decomposition}] Break down monolithic goals into atomic, manageable subtasks.
+		\item[\textsl{3. Planning}] Develop dynamic strategies and execution blueprints.
+		\item[\textsl{4. Tool Integration}] Select and securely connect external APIs and resources.
+		\item[\textsl{5. Memory \& Context Management}] Manage short-term state and long-term knowledge retrieval.
+		\item[\textsl{6. Decision-Making}] Evaluate pathways and resolve uncertainty using contextual reasoning.
+		\item[\textsl{7. Task Execution}] Perform actions autonomously and self-correct via feedback.
+		\item[\textsl{8. Human-in-the-Loop (HITL)}] Integrate human oversight for high-stakes and ethical alignment.
+		\item[\textsl{9. Reflection \& Learning}] Consolidate feedback and update memory to refine future behavior.
+	\end{description}
+\end{frame}
+
+\begin{frame}{Two Lenses on the Same System}
+				
+	The nine building blocks can be read two ways:
+	\begin{itemize}
+		\item \textbf{Sequential phases:} Goal, Decomposition, Planning, Decision, Execution, Reflection form a repeating cycle.
+		\item \textbf{Persistent steps:} Tool Integration, Memory \& Context, and HITL are established early and active throughout.
+	\end{itemize}
+	
+These building blocks are not static components -- they form a dynamic, sequential workflow that we will now examine in detail. behavior.
+\end{frame}
+% ==========================================
+% WORKFLOW STEPS
+% ==========================================
+
+\begin{frame}{Workflow Step 1: Goal Definition}
+	The foundational phase of establishing unambiguous, measurable, and strictly bounded objectives. This step defines the scope, operational constraints, and explicit success criteria required to anchor and evaluate the system's autonomous behavior throughout the lifecycle.
+	
+	\vspace{0.3cm}
+	\textbf{Strategies for Implementation:}
+	\begin{itemize}
+		\item \textbf{Formalized Prompt Engineering:} Utilize structured frameworks (e.g., SMART criteria) to define the primary objective.
+		\item \textbf{Boundary Conditioning:} Explicitly define negative constraints (what the agent must \textit{not} do) to prevent scope creep.
+		\item \textbf{Failure Mode Definition:} Pre-define explicit conditions that constitute a workflow failure or termination trigger.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 2: Task Decomposition}
+	The systematic breakdown of complex, monolithic objectives into atomic, manageable, and logically sequenced subtasks. This process reduces the cognitive load on the underlying language model, minimizes hallucination risks, and enables parallel or distributed processing.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Recursive Prompting:} Employ advanced reasoning frameworks (e.g., Tree-of-Thoughts) to iteratively break down problems.
+		\item \textbf{Dependency Mapping:} Enforce strict output schemas that require an agent to identify prerequisites and dependencies between subtasks.
+		\item \textbf{Granularity Control:} Implement algorithmic checks to ensure subtasks are neither too broad (causing model overload) nor too narrow (causing inefficiency).
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 3: Planning}
+	The synthesis of decomposed tasks into a dynamic, executable roadmap. This involves identifying resource allocation, establishing conditional logic for branching paths, and creating a temporal sequence that optimizes workflow efficiency and goal achievement.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Algorithmic Planning Frameworks:} Utilize structured methodologies like Plan-and-Solve or ReAct (Reasoning and Acting) to generate step-by-step execution blueprints.
+		\item \textbf{Directed Acyclic Graphs (DAGs):} Represent the workflow as a DAG to manage complex, non-linear task dependencies and enable parallel execution.
+		\item \textbf{Fallback Protocol Embedding:} Pre-define alternative strategic paths within the plan to handle anticipated bottlenecks or tool failures.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 4: Tool Integration}
+	The dynamic matching of specific subtasks with the optimal external capabilities (e.g., APIs, databases, code interpreters). This step ensures seamless, secure, and authenticated communication between the system's reasoning core and its operational environment.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Centralized Tool Registry:} Maintain a well-documented, version-controlled catalog of available tools with explicit descriptions of their capabilities and limitations.
+		\item \textbf{Strict Parameter Validation:} Enforce rigid data schemas (e.g., JSON Schema) for all tool inputs and outputs to prevent execution errors.
+		\item \textbf{Principle of Least Privilege:} Implement granular, scoped authentication tokens for API access to ensure system security and data integrity.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 5: Memory \& Context Management}
+	The continuous management of contextual data flow. This encompasses both short-term context retention (working memory) to maintain immediate conversational state, and long-term knowledge retrieval to ensure coherence and factual accuracy across extended, multi-step workflows.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Hybrid Memory Architectures:} Combine Vector Databases (for semantic similarity search) with Graph Databases (for relational context and entity tracking).
+		\item \textbf{Context Window Compression:} Implement automated summarization techniques to condense historical interactions, preserving critical information while managing token limits.
+		\item \textbf{State Management:} Utilize explicit state-tracking variables to monitor the progression and current status of the workflow at any given moment.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 6: Decision-Making}
+	The evaluative phase in which the system compares candidate pathways, handles uncertainty, and selects optimal actions using contextual reasoning. Unlike traditional automation, the system must weigh probabilistic outcomes, resolve ambiguities, and adjust its trajectory based on the evolving state of the environment.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Advanced Reasoning Frameworks:} Implement Chain-of-Thought (CoT) or Tree-of-Thoughts (ToT) prompting architectures to explicitly map out, evaluate, and prune potential action branches before execution.
+		\item \textbf{Uncertainty Quantification:} Utilize confidence scoring, entropy measures, or self-consistency checks to assess the reliability of the system's internal state before committing to a high-stakes action.
+		\item \textbf{Multi-Criteria Optimization:} Define explicit utility functions or reward models that balance competing objectives (e.g., execution speed vs. output accuracy) during the selection process.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 7: Task Execution}
+	The operational phase in which the system invokes tools, verifies outcomes, and adapts execution based on observed results. Execution in Agentic AI is not merely carrying out a command; it requires actively confirming that the intended state change occurred in the external environment and adapting if it did not.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{State Verification Loops:} Implement post-action validation checks that compare the actual environment state against the expected state to confirm successful execution before proceeding to the next step.
+		\item \textbf{Automated Rollback Mechanisms:} Design idempotent execution protocols with built-in fallback procedures to safely revert changes or clear partial states if an action fails or produces unintended side effects.
+		\item \textbf{Asynchronous Monitoring:} Utilize event-driven architectures to continuously track long-running tasks and adjust execution parameters based on real-time telemetry and feedback.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 8: Human-in-the-Loop (HITL)}
+	The governance steps that integrates human oversight at critical junctures for high-stakes decisions, error recovery, and ethical alignment. This step keeps the system aligned with human intent and safety boundaries without sacrificing the efficiency of autonomous operations.
+	
+	\vspace{0.3cm}
+	
+	\begin{itemize}
+		\item \textbf{Dynamic Escalation Triggers:} Program explicit threshold conditions (e.g., low confidence scores, out-of-distribution inputs, or high-risk resource allocation) that automatically pause execution and request human intervention.
+		\item \textbf{Explainable Interfaces:} Provide the human operator with transparent, context-rich summaries of the system's reasoning, proposed actions, and potential consequences to facilitate rapid and informed decision-making.
+		\item \textbf{Feedback Incorporation Pipelines:} Design mechanisms to capture, process, and integrate human corrections directly into the system's short-term context or long-term policy updates for continuous alignment and learning.
+	\end{itemize}
+\end{frame}
+
+\begin{frame}{Workflow Step 9: Reflection and Learning}
+	The post-execution phase where the system consolidates feedback, updates memory, and refines future behavior. This step closes the operational loop, turning isolated task executions into continuous systemic improvement.
+	
+	\vspace{0.3cm}
+	
+	\textbf{Strategies for Implementation:}
+	\begin{itemize}
+		\item \textbf{Outcome Reflection:} Compare final results against success criteria and failure conditions defined in Step 1.
+		\item \textbf{Memory Update:} Store validated lessons, entity relationships, and task outcomes for future retrieval.
+		\item \textbf{Policy Refinement:} Incorporate human corrections and execution traces into improved prompts, rules, or reward models.
+	\end{itemize}
+	
+
+\end{frame}
+
+\begin{frame}{The Agentic Lifecycle}
+	\textbf{The six core phases form a closed loop:}
+	
+	\vspace{0.3cm}
+	
+	\begin{center}
+		\large
+		\begin{tabular}{c}
+			Goal Definition (1) $\rightarrow$ Decomposition (2) $\rightarrow$ Planning (3) \\[0.2cm]
+			$\uparrow$\hspace{4.5cm}$\downarrow$ \\[0.2cm]
+			Reflection (9) $\leftarrow$ Execution (7) $\leftarrow$ Decision (6)
+		\end{tabular}
+	\end{center}
+	
+	\vspace{0.3cm}
+	
+	\textbf{Persistent layers:} Tool Integration, Memory \& Context, and Human-in-the-Loop operate continuously across all phases.
+	
+	\vspace{0.3cm}
+	
+	\textit{Result:} Each completed workflow feeds back into sharper goals, better plans, and refined behavior.
+\end{frame}
+\end{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+Provide a comprehensive audit of the coherence and consistency of this LaTeX presentation draft. Check the following aspects:
+- logical progression from Definition 
+→
+→ Purposes 
+→
+→ Building Blocks 
+→
+→ Step-by-Step Workflow
+
+- Terminological Consistency
+- Content‑Label Alignment within Steps
+- Flow between Slides and Implicit Narrative
+- Internal Redundancies & Opportunities for Tightening
+- Recommendations for Full Coherence
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+I am planning to design an Agentic AI to be developed following the workflow outlined in the first attached document. This Agent AI will be dedicated to building and auditing Python Notebooks focused on deep learning (DL) applications, as conceptually described in the second attached document. Please suggest  a tailored goal definition and task decomposition (the first two items of the workflow) for the required Agentic AI specialized in DL.
+
+Perform a thorough audit to verify that each step accurately converts a rigorous, rule-based audit protocol into precise, actionable instructions for an LLM-driven agent.
+ 
+ 
+ Product Requirements Documents
+
+
