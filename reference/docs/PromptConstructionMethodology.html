@@ -277,16 +277,16 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <section class="slide" id="s3" data-track="method">
   <h2>Respuesta primero</h2>
   <div class="accent-bar"></div>
-  <p class="sub"><strong>Qué te llevás:</strong> un método de 5 pasos para diseñar un prompt <em>antes</em> de escribirlo — el modelo correcto, el bloque correcto, la verificación correcta.</p>
+  <p class="sub"><strong>Qué te llevas:</strong> un método de 5 pasos para diseñar un prompt <em>antes</em> de escribirlo — el modelo correcto, el bloque correcto, la verificación correcta.</p>
   <h3>El método en una frase</h3>
-  <pre class="code">1. Enmarcá la tarea · 2. Conocé tu modelo · 3. Construí por bloques
+  <pre class="code">1. Enmarca la tarea · 2. Conoce tu modelo · 3. Construye por bloques
    (ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT)
-4. Verificá (determinista primero, LLM-juez después) · 5. Iterá y finalizá
+4. Verifica (determinista primero, LLM-juez después) · 5. Itera y finaliza
    con condiciones de aceptación</pre>
   <h3>Dos usos</h3>
   <ul class="checklist plain">
     <li><b>Sesión de equipo:</b> recórrela linealmente, diapositiva por diapositiva.</li>
-    <li><b>Referencia diaria:</b> saltá a la diapositiva que necesitás (hay anclas #sN) y usá los checklists.</li>
+    <li><b>Referencia diaria:</b> salta a la diapositiva que necesitas (hay anclas #sN) y usa los checklists.</li>
   </ul>
 </section>
 
@@ -321,11 +321,11 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <div class="accent-bar"></div>
   <p class="sub">La secuencia completa, de un vistazo. Cada paso se detalla después.</p>
   <ol class="checklist">
-    <li><b>Enmarcá la tarea</b> · ¿Qué problema concreto resolvés? ¿Salida esperada?</li>
-    <li><b>Conocé tu modelo</b> · <span class="mono" style="color:var(--subtle)">(consciente de capacidad)</span> ventana de contexto, seguimiento de instrucciones, profundidad de razonamiento, cuantización.</li>
-    <li><b>Construí el prompt</b> · con los bloques <b>ROLE · OBJECTIVE · CONTEXT · REASONING</b> + <b>OUTPUT FORMAT</b>.</li>
-    <li><b>Verificá</b> · <i>determinista primero</i>, LLM-juez después para lo subjetivo.</li>
-    <li><b>Iterá y finalizá</b> · contra <b>condiciones de aceptación</b>; ajustá y cerrá.</li>
+    <li><b>Enmarca la tarea</b> · ¿Qué problema concreto resuelves? ¿Salida esperada?</li>
+    <li><b>Conoce tu modelo</b> · <span class="mono" style="color:var(--subtle)">(consciente de capacidad)</span> ventana de contexto, seguimiento de instrucciones, profundidad de razonamiento, cuantización.</li>
+    <li><b>Construye el prompt</b> · con los bloques <b>ROLE · OBJECTIVE · CONTEXT · REASONING</b> + <b>OUTPUT FORMAT</b>.</li>
+    <li><b>Verifica</b> · <i>determinista primero</i>, LLM-juez después para lo subjetivo.</li>
+    <li><b>Itera y finaliza</b> · contra <b>condiciones de aceptación</b>; ajusta y cierra.</li>
   </ol>
 </section>
 
@@ -333,14 +333,14 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- s6 · Paso 2 · Conocer tu modelo (T3 / FR-7)                      -->
 <!-- ================================================================ -->
 <section class="slide" id="s6" data-track="method">
-  <h2>Paso 2 · Conocé tu modelo</h2>
+  <h2>Paso 2 · Conoce tu modelo</h2>
   <div class="accent-bar"></div>
-  <p class="sub">Cuatro dimensiones de capacidad que deciden <em>cómo</em> escribís el prompt. Un estilo no le sirve a todos los modelos.</p>
+  <p class="sub">Cuatro dimensiones de capacidad que deciden <em>cómo</em> escribes el prompt. Un estilo no le sirve a todos los modelos.</p>
   <div class="grid g3" style="margin-top:16px;">
-    <div class="panel" style="border-left-color:var(--teal);"><h4>1 · Ventana de contexto</h4><p>Cuánto texto podés incluir. Modelos locales suelen tener <strong>menos contexto</strong>: acortá CONTEXT y dividí la tarea.</p></div>
-    <div class="panel" style="border-left-color:var(--teal);"><h4>2 · Seguimiento de instrucciones</h4><p>Si el modelo ignora reglas largas, usá <strong>ORGANIZATION simple</strong>: una instrucción por párrafo, formato corto.</p></div>
+    <div class="panel" style="border-left-color:var(--teal);"><h4>1 · Ventana de contexto</h4><p>Cuánto texto puedes incluir. Modelos locales suelen tener <strong>menos contexto</strong>: acorta CONTEXT y divide la tarea.</p></div>
+    <div class="panel" style="border-left-color:var(--teal);"><h4>2 · Seguimiento de instrucciones</h4><p>Si el modelo ignora reglas largas, usa <strong>ORGANIZATION simple</strong>: una instrucción por párrafo, formato corto.</p></div>
     <div class="panel" style="border-left-color:var(--trackB);"><h4>3 · Profundidad de razonamiento</h4><p>Modelos capaces toleran <strong>REASONING extenso y autoevaluación</strong>. Modelos chicos colapsan ante cadenas largas.</p></div>
-    <div class="panel" style="border-left-color:var(--trackB);"><h4>4 · Cuantización</h4><p>Un GGUF Q4 cuantizado pierde matiz frente a su versión completa. <strong>Bajá la exigencia</strong> de estilo y razonamiento.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>4 · Cuantización</h4><p>Un GGUF Q4 cuantizado pierde matiz frente a su versión completa. <strong>Baja la exigencia</strong> de estilo y razonamiento.</p></div>
     <div class="panel" style="border-left-color:var(--ok);"><h4>Regla práctica</h4><p>Un prompt largo y sofisticado es <strong>contraproducente</strong> en un modelo pequeño; uno trunco desaprovecha un modelo grande.</p></div>
     <div class="panel" style="border-left-color:var(--seafoam);"><h4>Ojo: dos vías</h4><p>Esto da origen a las <b>Vía A</b> (modelos locales pequeños) y <b>Vía B</b> (LLM capaces) que vemos adelante.</p></div>
   </div>
@@ -355,12 +355,12 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <div class="qpqh">
     <div class="q"><b>Qué</b> — la posición o rol desde el que responde el modelo: audiencia, contexto profesional, tono.</div>
     <div class="q"><b>Por qué</b> — alinea preactivamente el registro, el vocabulario y el nivel de detalle; reduce errores de estilo.</div>
-    <div class="q"><b>Cómo</b> — una frase al inicio: quién sos, a quién le hablás, para qué contexto.</div>
+    <div class="q"><b>Cómo</b> — una frase al inicio: quién eres, a quién le hablas, para qué contexto.</div>
   </div>
   <h3>Mini ejemplo</h3>
   <div class="abd">
     <div><span class="tag bad">ANTES</span><pre class="code trackA">Explique los costos del modelo.</pre></div>
-    <div><span class="tag good">DESPUÉS</span><pre class="code trackA">Sos un <span class="cmt">financiero</span> senior. Explicá los costes de inferencia a un <span class="cmt">CTO no técnico</span>, en 3 frases y sin métricas internas.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackA">Eres un <span class="cmt">financiero</span> senior. Explica los costes de inferencia a un <span class="cmt">CTO no técnico</span>, en 3 frases y sin métricas internas.</pre></div>
   </div>
 </section>
 
@@ -373,11 +373,11 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <div class="qpqh">
     <div class="q"><b>Qué</b> — el objetivo concreto y medible que debe lograr la respuesta.</div>
     <div class="q"><b>Por qué</b> — un objetivo bien definido evita respuestas genéricas y permite verificar el resultado después.</div>
-    <div class="q"><b>Cómo</b> — verbo de acción + entregable + criterio de suficiencia: «clasificá…», «resumí… en N líneas».</div>
+    <div class="q"><b>Cómo</b> — verbo de acción + entregable + criterio de suficiencia: «clasifica…», «resume… en N líneas».</div>
   </div>
   <h3>Mini ejemplo</h3>
   <div class="abd">
-    <div><span class="tag bad">ANTES</span><pre class="code trackB">Analizá este log de errores.</pre></div>
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Analiza este log de errores.</pre></div>
     <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Objetivo: <span class="cmt">agrupar los 5 patrones de error más frecuentes</span> del log y ordenarlos por impacto. Entregable: tabla causa → recuento → sugerencia.</pre></div>
   </div>
 </section>
@@ -395,7 +395,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   </div>
   <h3>Mini ejemplo</h3>
   <div class="abd">
-    <div><span class="tag bad">ANTES</span><pre class="code trackA">Resumí el documento adjunto.</pre></div>
+    <div><span class="tag bad">ANTES</span><pre class="code trackA">Resume el documento adjunto.</pre></div>
     <div><span class="tag good">DESPUÉS</span><pre class="code trackA">Contexto: documento <span class="cmt">NotebookBuildAudit v2</span>, sección §3. <span class="cmt">Restricción</span>: solo fuentes del archivo, nada externo. <span class="cmt">Supuesto</span>: el lector ya conoce el framework.</pre></div>
   </div>
 </section>
@@ -409,12 +409,12 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <div class="qpqh">
     <div class="q"><b>Qué</b> — cómo debe razonar: paso a paso, con justificación, o decidir de un vistazo.</div>
     <div class="q"><b>Por qué</b> — pedir el razonamiento «en voz alta» mejora notablemente la exactitud en tareas complejas (Cadena de pensamiento).</div>
-    <div class="q"><b>Cómo</b> — «pensá paso a paso», «mostrá el cálculo», «justificá cada decisión». Reservalo para modelos capaces.</div>
+    <div class="q"><b>Cómo</b> — «piensa paso a paso», «muestra el cálculo», «justifica cada decisión». Resérvalo para modelos capaces.</div>
   </div>
   <h3>Mini ejemplo</h3>
   <div class="abd">
     <div><span class="tag bad">ANTES</span><pre class="code trackB">¿Fue viable este experimento?</pre></div>
-    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Razoná paso a paso: <span class="cmt">1) definí el umbral de viabilidad, 2) compará con las métricas, 3) justificá</span>. Recién al final emití el veredicto Sí / No.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Razona paso a paso: <span class="cmt">1) define el umbral de viabilidad, 2) compara con las métricas, 3) justifica</span>. Recién al final emite el veredicto Sí / No.</pre></div>
   </div>
 </section>
 
@@ -442,7 +442,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- s12 · Paso 5 · Iterar y finalizar (T3 / FR-3)                    -->
 <!-- ================================================================ -->
 <section class="slide" id="s12" data-track="method">
-  <h2>Paso 5 · Iterá y finalizá</h2>
+  <h2>Paso 5 · Itera y finaliza</h2>
   <div class="accent-bar"></div>
   <p class="sub">El bucle cierra cuando el prompt cumple sus <strong>condiciones de aceptación</strong>.</p>
   <h3>Condiciones de aceptación (FINALIZATION)</h3>
@@ -453,7 +453,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
     <li><b>Estable:</b> produce resultados consistentes en intentos repetidos, no por suerte.</li>
     <li><b>Documentado:</b> queda el prompt + su criterio de verificación para reuso del equipo.</li>
   </ul>
-  <p class="sub" style="margin-top:12px;">Si no cumple: <strong>volvé al paso 1</strong> (¿tarea mal enmarcada?), al 2 (¿modelo equivocado?) o ajustá un bloque. Repetí hasta aceptar.</p>
+  <p class="sub" style="margin-top:12px;">Si no cumple: <strong>vuelve al paso 1</strong> (¿tarea mal enmarcada?), al 2 (¿modelo equivocado?) o ajusta un bloque. Repite hasta aceptar.</p>
 </section>
 
 <!-- ================================================================ -->
@@ -538,7 +538,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 REASONING + enrutado</text>
     <rect class="node nVer" x="640" y="68" width="170" height="64" rx="2"/>
     <text class="ntxt" x="725" y="94" text-anchor="middle">Juez (Paso 4)</text>
-    <text class="ntxt dim" x="725" y="116" text-anchor="middle">verificá el resultado</text>
+    <text class="ntxt dim" x="725" y="116" text-anchor="middle">verifica el resultado</text>
     <path class="edgeM" d="M320 58 L320 84 L190 100"/>
     <path class="edgeA" d="M410 100 L450 100"/>
     <path class="edgeM" d="M320 58 L320 68"/>
@@ -575,7 +575,7 @@ REASONING + enrutado</text>
     <div class="panel" style="border-left-color:var(--seafoam);">
       <h4>LLM-juez (Layer 2)</h4>
       <p><strong>Solo para lo subjetivo:</strong> claridad, coherencia metodológica, calidad de redacción.</p>
-      <p>Descomponé en criterios explícitos (estilo G-Eval), nunca una nota global suelta. Cuidá los sesgos (posición, verbosidad, automejora).</p>
+      <p>Descompón en criterios explícitos (estilo G-Eval), nunca una nota global suelta. Cuida los sesgos (posición, verbosidad, automejora).</p>
     </div>
   </div>
   <svg class="flow" viewBox="0 0 820 120" role="img" aria-label="Flujo determinista primero, luego LLM-juez">
@@ -598,7 +598,7 @@ REASONING + enrutado</text>
   <h2>Checklist simple de entrada</h2>
   <div class="accent-bar"></div>
   <span class="badge">Verificación</span>
-  <p class="sub">Antes de mandar un prompt a producción o a revisión, verificá rápido:</p>
+  <p class="sub">Antes de mandar un prompt a producción o a revisión, verifica rápido:</p>
   <ul class="checklist plain">
     <li>¿El objetivo es <b>medible</b> y la salida tiene formato fijo?</li>
     <li>¿Hay algún chequeo <b>determinista</b> aplicable? (JSON, parseo, compare)</li>
@@ -679,13 +679,13 @@ REASONING + enrutado</text>
   <span class="badge">Método</span>
   <p class="sub">El método completo en una página, para pegar en la pared (o en el archivo de prompts).</p>
   <ol class="checklist">
-    <li><b>Enmarcá</b> la tarea: problema concreto + salida esperada.</li>
-    <li><b>Conocé tu modelo</b>: ventana, seguimiento, razonamiento, cuantización → elegí Vía A o Vía B.</li>
-    <li><b>Construí por bloques</b>: <b class="mono">ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT</b>.</li>
-    <li><b>Verificá</b>: determinista primero; LLM-juez con criterios explícitos para lo subjetivo.</li>
-    <li><b>Iterá y finalizá</b> contra condiciones de aceptación; documentá el prompt y su verificación.</li>
+    <li><b>Enmarca</b> la tarea: problema concreto + salida esperada.</li>
+    <li><b>Conoce tu modelo</b>: ventana, seguimiento, razonamiento, cuantización → elige Vía A o Vía B.</li>
+    <li><b>Construye por bloques</b>: <b class="mono">ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT</b>.</li>
+    <li><b>Verifica</b>: determinista primero; LLM-juez con criterios explícitos para lo subjetivo.</li>
+    <li><b>Itera y finaliza</b> contra condiciones de aceptación; documenta el prompt y su verificación.</li>
   </ol>
-  <p class="sub" style="margin-top:12px;">Si dudás de una técnica, volvé a la <strong>matriz de técnicas</strong> (Chen 2025, dos ejes). Si dudás del resultado, corré el <strong>checklist simple de entrada</strong>.</p>
+  <p class="sub" style="margin-top:12px;">Si dudas de una técnica, vuelve a la <strong>matriz de técnicas</strong> (Chen 2025, dos ejes). Si dudas del resultado, corre el <strong>checklist simple de entrada</strong>.</p>
 </section>
 
 <!-- ================================================================ -->
@@ -694,9 +694,9 @@ REASONING + enrutado</text>
 <section class="slide cover divider" id="s24">
   <span class="badge" style="background:var(--ok);color:var(--ink);">Método en 5 pasos</span>
   <p class="kicker" style="color:var(--seafoam);">Gracias</p>
-  <h1>Construí prompts con método, no por suerte.</h1>
+  <h1>Construye prompts con método, no por suerte.</h1>
   <div class="accent-bar"></div>
-  <p class="sub">Enmarcá → conocé el modelo → construí por bloques → verificá → iterá. El equipo habla el mismo idioma.</p>
+  <p class="sub">Enmarca → conoce el modelo → construye por bloques → verifica → itera. El equipo habla el mismo idioma.</p>
   <p class="meta" style="color:var(--subtle);margin-top:16px;">Referencia rápida en la diapositiva anterior · detalle por bloques en las diapositivas 7–11.</p>
 </section>
 
