@@ -229,7 +229,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <span class="mseclabel" id="msec" aria-hidden="true">Portada</span>
   <span class="progress-wrap">
     <span class="progress"><i id="bar"></i></span>
-    <span class="slide-counter" aria-live="polite" aria-atomic="true"><b id="cur">1</b> / <span id="tot">24</span></span>
+    <span class="slide-counter" aria-live="polite" aria-atomic="true"><b id="cur">1</b> / <span id="tot">23</span></span>
   </span>
 </header>
 
@@ -243,7 +243,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
   <p class="kicker">Capacitación del equipo · Material de referencia</p>
   <h1>Metodología de construcción de prompts</h1>
   <div class="accent-bar"></div>
-  <p class="sub">Un método único y repetible para que todo el equipo arme prompts <strong>consistentes, conscientes de la capacidad del modelo y verificables</strong>. Se usa en dos momentos: en la <strong>sesión de equipo</strong> y como <strong>referencia diaria</strong> al construir un prompt.</p>
+  <p class="sub">Un método único, repetible y verificable para que el equipo construya prompts <strong>consistentes, conscientes de la capacidad real del modelo y auditables</strong>. Se aplica en dos momentos: como <strong>sesión de equipo</strong> y como <strong>referencia diaria</strong> al construir un prompt.</p>
   <div class="usos">
     <span class="badge" style="background:var(--teal);color:var(--ink);">Uso 1 · Presentación</span>
     <span class="badge" style="background:var(--seafoam);color:var(--ink);">Uso 2 · Referencia</span>
@@ -257,66 +257,27 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <section class="slide" id="s2">
   <h2>Agenda</h2>
   <div class="accent-bar"></div>
-  <p class="sub">Nueve temas, en orden de aprendizaje: primero el qué y el porqué, después la técnica.</p>
+  <p class="sub">Cuatro partes, en orden de aprendizaje: el método base, cada vía de aplicación y el cierre con garantía de calidad.</p>
   <ol class="checklist">
-    <li><b>Respuesta primero</b> — lo que este método te da y cómo usarlo.</li>
-    <li><b>Por qué importa</b> — alucinación, capacidad y consistencia del equipo.</li>
-    <li><b>Método en una página</b> — los 5 pasos de un vistazo.</li>
-    <li><b>Detalle por bloque</b> — ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT.</li>
-    <li><b>Dos vías</b> — Vía A y Vía B con su matriz de técnicas.</li>
-    <li><b>Multiagente</b> — de un agente a varios.</li>
-    <li><b>Verificación</b> — determinista primero, LLM-juez después.</li>
-    <li><b>Fundamentación bibliográfica</b> — métodos comprobados.</li>
-    <li><b>Checklist final</b> — referencia rápida de cierre.</li>
+    <li><b>Método base de construcción</b> — los 5 pasos y el detalle por bloques (ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT).</li>
+    <li><b>Construcción para tareas básicas</b> — Vía A y la matriz de técnicas.</li>
+    <li><b>Construcción para LLMs agénticos</b> — prompt de sistema, RAG y tool/function calling.</li>
+    <li><b>Garantía y cierre</b> — verificación, fundamentación bibliográfica y checklist final.</li>
   </ol>
 </section>
 
 <!-- ================================================================ -->
-<!-- s3 · Respuesta primero (T1 / FR-1, FR-13)                        -->
+<!-- s3 · Método en una página (T3 / FR-3)                            -->
 <!-- ================================================================ -->
-<section class="slide" id="s3" data-track="method">
-  <h2>Respuesta primero</h2>
-  <div class="accent-bar"></div>
-  <p class="sub"><strong>Qué te llevas:</strong> un método de 5 pasos para diseñar un prompt <em>antes</em> de escribirlo — el modelo correcto, el bloque correcto, la verificación correcta.</p>
-  <h3>El método en una frase</h3>
-  <pre class="code">1. Enmarca la tarea · 2. Conoce tu modelo · 3. Construye por bloques
-   (ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT)
-4. Verifica (determinista primero, LLM-juez después) · 5. Itera y finaliza
-   con condiciones de aceptación</pre>
-  <h3>Dos usos</h3>
-  <ul class="checklist plain">
-    <li><b>Sesión de equipo:</b> recórrela linealmente, diapositiva por diapositiva.</li>
-    <li><b>Referencia diaria:</b> salta a la diapositiva que necesitas (hay anclas #sN) y usa los checklists.</li>
-  </ul>
-</section>
 
 <!-- ================================================================ -->
-<!-- s4 · Por qué importa (T2 / FR-2)                                 -->
+<!-- s4 · Paso 2 · Conocer tu modelo (T3 / FR-7)                      -->
 <!-- ================================================================ -->
-<section class="slide" id="s4">
-  <h2>Por qué importa</h2>
-  <div class="accent-bar"></div>
-  <p class="sub">Sin método compartido, el resultado depende de la persona y del modelo. Con método, depende del diseño.</p>
-  <div class="grid g3" style="margin-top:18px;">
-    <div class="panel" style="border-left-color:var(--teal);">
-      <h4>Menos alucinación y ambigüedad</h4>
-      <p>Los bloques <strong>CONTEXT</strong> y <strong>REASONING</strong> acotan el espacio de respuesta y obligan a razonar antes de responder. Menos adivinanza, más precisión.</p>
-    </div>
-    <div class="panel" style="border-left-color:var(--trackB);">
-      <h4>Conciencia de capacidad</h4>
-      <p>Un mismo prompt no sirve para un modelo local pequeño (GGUF) y para un LLM grande y capaz. Elegir la técnica según <strong>qué tan capaz es el modelo</strong>.</p>
-    </div>
-    <div class="panel" style="border-left-color:var(--ok);">
-      <h4>Consistencia del equipo</h4>
-      <p>Un único método de 5 pasos hace que dos personas produzcan prompts <strong>comparables y auditables</strong>, no dos estilos personales.</p>
-    </div>
-  </div>
-</section>
 
 <!-- ================================================================ -->
 <!-- s5 · Método en una página (T3 / FR-3)                            -->
 <!-- ================================================================ -->
-<section class="slide" id="s5" data-track="method">
+<section class="slide" id="s3" data-track="method">
   <h2>Método en una página · 5 pasos</h2>
   <div class="accent-bar"></div>
   <p class="sub">La secuencia completa, de un vistazo. Cada paso se detalla después.</p>
@@ -332,7 +293,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s6 · Paso 2 · Conocer tu modelo (T3 / FR-7)                      -->
 <!-- ================================================================ -->
-<section class="slide" id="s6" data-track="method">
+<section class="slide" id="s4" data-track="method">
   <h2>Paso 2 · Conoce tu modelo</h2>
   <div class="accent-bar"></div>
   <p class="sub">Cuatro dimensiones de capacidad que deciden <em>cómo</em> escribes el prompt. Un estilo no le sirve a todos los modelos.</p>
@@ -349,7 +310,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s7 · Bloque ROLE (T4 / FR-4, FR-14)                              -->
 <!-- ================================================================ -->
-<section class="slide" id="s7" data-track="method">
+<section class="slide" id="s5" data-track="method">
   <h2>Bloque ROLE</h2>
   <div class="accent-bar"></div>
   <div class="qpqh">
@@ -367,7 +328,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s8 · Bloque OBJECTIVE (T4 / FR-4, FR-14)                         -->
 <!-- ================================================================ -->
-<section class="slide" id="s8" data-track="method">
+<section class="slide" id="s6" data-track="method">
   <h2>Bloque OBJECTIVE</h2>
   <div class="accent-bar"></div>
   <div class="qpqh">
@@ -385,7 +346,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s9 · Bloque CONTEXT (T4 / FR-4, FR-14)                           -->
 <!-- ================================================================ -->
-<section class="slide" id="s9" data-track="method">
+<section class="slide" id="s7" data-track="method">
   <h2>Bloque CONTEXT</h2>
   <div class="accent-bar"></div>
   <div class="qpqh">
@@ -403,7 +364,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s10 · Bloque REASONING (T4 / FR-4, FR-14)                        -->
 <!-- ================================================================ -->
-<section class="slide" id="s10" data-track="method">
+<section class="slide" id="s8" data-track="method">
   <h2>Bloque REASONING</h2>
   <div class="accent-bar"></div>
   <div class="qpqh">
@@ -421,7 +382,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s11 · Bloque OUTPUT FORMAT (T4 / FR-4, FR-14)                    -->
 <!-- ================================================================ -->
-<section class="slide" id="s11" data-track="method">
+<section class="slide" id="s9" data-track="method">
   <h2>Bloque OUTPUT FORMAT</h2>
   <div class="accent-bar"></div>
   <div class="qpqh">
@@ -441,7 +402,7 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 <!-- ================================================================ -->
 <!-- s12 · Paso 5 · Iterar y finalizar (T3 / FR-3)                    -->
 <!-- ================================================================ -->
-<section class="slide" id="s12" data-track="method">
+<section class="slide" id="s10" data-track="method">
   <h2>Paso 5 · Itera y finaliza</h2>
   <div class="accent-bar"></div>
   <p class="sub">El bucle cierra cuando el prompt cumple sus <strong>condiciones de aceptación</strong>.</p>
@@ -457,45 +418,38 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 </section>
 
 <!-- ================================================================ -->
-<!-- s20 · DIVISOR · Dos vías (FR-12)                                 -->
+<!-- s11 · DIVISOR · Construcción para tareas básicas (Parte 2)       -->
 <!-- ================================================================ -->
-<section class="slide divider" id="s20">
-  <span class="badge">Sección 5</span>
-  <div class="big" style="color:var(--trackA);">5</div>
-  <h2>Dos vías de ataque</h2>
-  <p class="sub">Vía A y Vía B, con la matriz de técnicas para elegir el enfoque correcto.</p>
+<section class="slide divider" id="s11">
+  <span class="badge">Parte 2</span>
+  <div class="big" style="color:var(--trackA);">2</div>
+  <h2>Construcción para tareas básicas</h2>
+  <p class="sub">Vía A · tareas discretas con modelos locales pequeños y formato estricto.</p>
 </section>
 
 <!-- ================================================================ -->
 <!-- s13 · Dos vías: A vs B (T5 / FR-5)                               -->
 <!-- ================================================================ -->
-<section class="slide" id="s13">
-  <h2>Dos vías: A vs B</h2>
+<section class="slide" id="s12">
+  <h2>Enfoque para tareas básicas (Vía A)</h2>
   <div class="accent-bar"></div>
-  <p class="sub">Un mismo objetivo por dos caminos según la capacidad del modelo disponible.</p>
-  <div class="grid g2" style="margin-top:14px;">
-    <div class="panel" style="border-left-color:var(--trackA);">
-      <span class="badge">Vía A · Modelos locales</span>
-      <h4>Simple · pequeño · local (GGUF)</h4>
-      <p><strong>Enfoque:</strong> contexto corto, una instrucción por párrafo, OUTPUT FORMAT estricto, poca REASONING encadenada.</p>
-      <p><strong>Encaja:</strong> tareas discretas, clasificación, extracción, resumen corto, sin red de razonamiento larga.</p>
-    </div>
-    <div class="panel" style="border-left-color:var(--trackB);">
-      <span class="badge">Vía B · LLM capaces</span>
-      <h4>Capaz · grande · mayor amplitud</h4>
-      <p><strong>Enfoque:</strong> contexto rico, REASONING paso a paso, autoevaluación, ROLE/OBJECTIVE sofisticadas.</p>
-      <p><strong>Encaja:</strong> análisis abierto, síntesis, razonamiento multi-paso, redacci&oacute;n revisada por un juez.</p>
-    </div>
+  <p class="sub">Para tareas discretas y modelos locales pequeños: un prompt directo, de contexto corto y salida estricta.</p>
+  <div class="panel" style="border-left-color:var(--trackA);margin-top:14px;">
+    <span class="badge">Vía A · Modelos locales</span>
+    <h4>Simple · pequeño · local (GGUF)</h4>
+    <p><strong>Enfoque:</strong> contexto corto, una instrucción por párrafo, OUTPUT FORMAT estricto y poca REASONING encadenada.</p>
+    <p><strong>Encaja:</strong> tareas discretas, clasificación, extracción y resumen corto; sin largas cadenas de razonamiento.</p>
   </div>
+  <p class="sub" style="margin-top:12px;">Para tareas abiertas con LLM capaces (análisis, síntesis, razonamiento multi-paso), el enfoque agéntico se desarrolla en la <strong>Parte 3 (Vía B)</strong>.</p>
 </section>
 
 <!-- ================================================================ -->
 <!-- s14 · Matriz de técnicas (T5 / FR-6)                             -->
 <!-- ================================================================ -->
-<section class="slide" id="s14">
+<section class="slide" id="s13">
   <h2>Matriz de técnicas</h2>
   <div class="accent-bar"></div>
-  <p class="sub">Regla de dos ejes de Chen 2025: <strong>tarea simple + modelo capaz → one-shot</strong>; <strong>tarea compleja + modelo menos capaz → few-shot</strong>.</p>
+  <p class="sub">Para tareas básicas (Vía A) se priorizan <strong>zero-shot</strong> y <strong>few-shot</strong>; el resto aplica según la capacidad del modelo. Regla de dos ejes de Chen 2025: <strong>tarea simple + modelo capaz → one-shot</strong>; <strong>tarea compleja + modelo menos capaz → few-shot</strong>.</p>
   <table class="matrix">
     <tr><th>Técnica</th><th>Tarea simple · modelo capaz</th><th>Tarea compleja · modelo limitado</th></tr>
     <tr><td><code>Zero-shot</code></td><td class="rB">Muy eficiente · primera opción</td><td class="rN">Arriesgado · omite contexto</td></tr>
@@ -509,19 +463,81 @@ h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
 </section>
 
 <!-- ================================================================ -->
-<!-- s21 · DIVISOR · Multiagente (FR-12)                              -->
+<!-- s14 · DIVISOR · Construcción para LLMs agénticos (Parte 3)        -->
 <!-- ================================================================ -->
-<section class="slide divider" id="s21">
-  <span class="badge">Sección 6</span>
-  <div class="big" style="color:var(--multi);">6</div>
-  <h2>De un agente a multiagente</h2>
-  <p class="sub">Orquestar varias mentes usando los mismos bloques.</p>
+<section class="slide divider" id="s14">
+  <span class="badge">Parte 3</span>
+  <div class="big" style="color:var(--trackB);">3</div>
+  <h2>Construcción para LLMs agénticos</h2>
+  <p class="sub">Prompt de sistema, ensamblado RAG y tool/function calling en APIs.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s15 · Prompt de sistema en entornos de agentes (Vía B)            -->
+<!-- ================================================================ -->
+<section class="slide" id="s15" data-track="B">
+  <h2>Prompt de sistema en entornos de agentes</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">En un agente, el prompt de sistema es persistente y de alcance global: no describe una única respuesta, sino el comportamiento en cada turno y la relación con otras herramientas.</p>
+  <div class="grid g3" style="margin-top:14px;">
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Rol y objetivo a nivel sistema</h4><p>ROLE y OBJECTIVE se declaran una vez y rigen toda la sesión, no cada llamada.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Catálogo de herramientas</h4><p>Se enumeran y describen las funciones que el modelo puede invocar y en qué condiciones.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Formato entre turnos</h4><p>OUTPUT FORMAT se especifica tanto para respuestas como para solicitudes de tool call.</p></div>
+  </div>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Eres asistente. Responde la pregunta.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Eres el <span class="cmt">agente de resolución de incidencias</span>. Resuelve cada turno usando las herramientas <span class="cmt">buscar_ticket</span>, <span class="cmt">reabrir</span>, <span class="cmt">escalar</span>. No asumas que eres el único actor: invoca la herramienta indicada antes de responder.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s16 · RAG: ensamblado del contexto (Vía B)                        -->
+<!-- ================================================================ -->
+<section class="slide" id="s16" data-track="B">
+  <h2>RAG: ensamblado del contexto</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">La recuperación llena el bloque CONTEXT con fragmentos del corpus; el prompt ata la respuesta a esa evidencia. Consistente con MODP: contexto ajustado al modelo, no el corpus completo.</p>
+  <ul class="checklist plain">
+    <li><b>Inyecta pasajes recuperados</b> en <b>CONTEXT</b>, cada uno con un marcador (n.º de fragmento) y su fuente.</li>
+    <li><b>Fundamenta las respuestas</b> solo en los pasajes provistos; nada de conocimiento implícito.</li>
+    <li><b>Cita fuentes con punteros</b> junto a cada afirmación.</li>
+    <li><b>Declara evidencia ausente:</b> «no puedo afirmar esto con la evidencia disponible».</li>
+    <li><b>Define el límite de conocimiento:</b> no inventar más allá del contexto provisto (principal fuente de alucinación).</li>
+  </ul>
+  <pre class="code trackB">Contexto: [pasajes recuperados, cada uno con n.º de fragmento]
+<span class="cmt">Fundamenta</span> cada afirmación en los pasajes y cita el n.º de fragmento.
+Si no hay evidencia, responde: «no puedo afirmarlo con la evidencia disponible».</pre>
+</section>
+
+<!-- ================================================================ -->
+<!-- s17 · Tool/function calling en APIs (Vía B)                       -->
+<!-- ================================================================ -->
+<section class="slide" id="s17" data-track="B">
+  <h2>Tool/function calling en APIs</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">El prompt define cuándo y cómo el modelo invoca funciones, no solo qué debe responder.</p>
+  <ul class="checklist plain">
+    <li><b>Define finalidad y JSON Schema</b> de cada herramienta en OBJECTIVE / OUTPUT FORMAT.</li>
+    <li><b>Instruye cuándo llamar</b> en lugar de responder, y cuándo responder sin llamar.</li>
+    <li><b>Maneja parámetros faltantes</b> o incompletos: solicitar el dato o completarlo con un valor por defecto explícito.</li>
+    <li><b>Errores y reintentos:</b> ante una llamada fallida, interpretar el error y reintentar una vez antes de escalar.</li>
+    <li><b>Fallback en texto libre:</b> si no aplica ninguna herramienta, responder de forma directa y clara.</li>
+  </ul>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Herramientas: buscar, pagar.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Objetivo: <span class="cmt">liquidar la factura</span>.
+Herramienta <span class="cmt">pagar_factura {factura_id:int, metodo:string}</span>:
+ si falta <span class="cmt">metodo</span>, solicítalo al usuario; si la llamada falla, reintenta una vez y luego informa. Si no aplica herramienta, responde en texto libre.</pre></div>
+  </div>
 </section>
 
 <!-- ================================================================ -->
 <!-- s15 · De un agente a multiagente (T6 / FR-8)                     -->
 <!-- ================================================================ -->
-<section class="slide" id="s15" data-track="multi">
+<section class="slide" id="s18" data-track="multi">
   <h2>De un agente a multiagente</h2>
   <div class="accent-bar"></div>
   <span class="badge">Multiagente</span>
@@ -549,19 +565,9 @@ REASONING + enrutado</text>
 </section>
 
 <!-- ================================================================ -->
-<!-- s22 · DIVISOR · Verificación (FR-12)                             -->
+<!-- s19 · Verificación: determinista + LLM-juez (T7 / FR-9)          -->
 <!-- ================================================================ -->
-<section class="slide divider" id="s22">
-  <span class="badge">Sección 7</span>
-  <div class="big" style="color:var(--seafoam);">7</div>
-  <h2>Verificación</h2>
-  <p class="sub">Determinista primero; LLM-juez solo para lo subjetivo.</p>
-</section>
-
-<!-- ================================================================ -->
-<!-- s16 · Verificación: determinista + LLM-juez (T7 / FR-9)          -->
-<!-- ================================================================ -->
-<section class="slide" id="s16" data-track="verify">
+<section class="slide" id="s19" data-track="verify">
   <h2>Verificación: determinista + LLM-juez</h2>
   <div class="accent-bar"></div>
   <span class="badge">Verificación</span>
@@ -592,9 +598,9 @@ REASONING + enrutado</text>
 </section>
 
 <!-- ================================================================ -->
-<!-- s17 · Checklist simple de entrada (T7 / FR-9)                    -->
+<!-- s20 · Checklist simple de entrada (T7 / FR-9)                    -->
 <!-- ================================================================ -->
-<section class="slide" id="s17" data-track="verify">
+<section class="slide" id="s20" data-track="verify">
   <h2>Checklist simple de entrada</h2>
   <div class="accent-bar"></div>
   <span class="badge">Verificación</span>
@@ -609,19 +615,9 @@ REASONING + enrutado</text>
 </section>
 
 <!-- ================================================================ -->
-<!-- s23 · DIVISOR · Fundamentación (FR-12)                           -->
+<!-- s21 · Fundamentación bibliográfica (T8 / FR-10, NFR-4)           -->
 <!-- ================================================================ -->
-<section class="slide divider" id="s23">
-  <span class="badge">Sección 8</span>
-  <div class="big" style="color:var(--teal);">8</div>
-  <h2>Fundamentación bibliográfica</h2>
-  <p class="sub">Métodos comprobados y verificados, mapeados a los pasos del método.</p>
-</section>
-
-<!-- ================================================================ -->
-<!-- s18 · Fundamentación bibliográfica (T8 / FR-10, NFR-4)           -->
-<!-- ================================================================ -->
-<section class="slide" id="s18">
+<section class="slide" id="s21">
   <h2>Fundamentación bibliográfica</h2>
   <div class="accent-bar"></div>
   <p class="sub">Fuentes primarias verificadas (2025/2026) y papers de jueces, mapeadas a los pasos del método.</p>
@@ -671,9 +667,9 @@ REASONING + enrutado</text>
 </section>
 
 <!-- ================================================================ -->
-<!-- s19 · Checklist final · referencia rápida (T9 / FR-11)           -->
+<!-- s22 · Checklist final · referencia rápida (T9 / FR-11)           -->
 <!-- ================================================================ -->
-<section class="slide" id="s19" data-track="method">
+<section class="slide" id="s22" data-track="method">
   <h2>Checklist final · referencia rápida</h2>
   <div class="accent-bar"></div>
   <span class="badge">Método</span>
@@ -681,7 +677,7 @@ REASONING + enrutado</text>
   <ol class="checklist">
     <li><b>Enmarca</b> la tarea: problema concreto + salida esperada.</li>
     <li><b>Conoce tu modelo</b>: ventana, seguimiento, razonamiento, cuantización → elige Vía A o Vía B.</li>
-    <li><b>Construye por bloques</b>: <b class="mono">ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT</b>.</li>
+    <li><b>Construye por bloques</b>: <b class="mono">ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT</b>. En Vía B agéntica, aplica los bloques al prompt de sistema, al ensamblado RAG y al tool calling.</li>
     <li><b>Verifica</b>: determinista primero; LLM-juez con criterios explícitos para lo subjetivo.</li>
     <li><b>Itera y finaliza</b> contra condiciones de aceptación; documenta el prompt y su verificación.</li>
   </ol>
@@ -689,22 +685,22 @@ REASONING + enrutado</text>
 </section>
 
 <!-- ================================================================ -->
-<!-- s24 · Cierre / gracias (end card)                                -->
+<!-- s23 · Cierre (end card)                                          -->
 <!-- ================================================================ -->
-<section class="slide cover divider" id="s24">
+<section class="slide cover divider" id="s23">
   <span class="badge" style="background:var(--ok);color:var(--ink);">Método en 5 pasos</span>
-  <p class="kicker" style="color:var(--seafoam);">Gracias</p>
-  <h1>Construye prompts con método, no por suerte.</h1>
+  <p class="kicker" style="color:var(--seafoam);">Cierre</p>
+  <h1>Construimos prompts con método, no por ensayo y error.</h1>
   <div class="accent-bar"></div>
-  <p class="sub">Enmarca → conoce el modelo → construye por bloques → verifica → itera. El equipo habla el mismo idioma.</p>
-  <p class="meta" style="color:var(--subtle);margin-top:16px;">Referencia rápida en la diapositiva anterior · detalle por bloques en las diapositivas 7–11.</p>
+  <p class="sub">Enmarcar → conocer el modelo → construir por bloques → verificar → iterar. El equipo habla un mismo idioma, en tareas básicas y en entornos agénticos.</p>
+  <p class="meta" style="color:var(--subtle);margin-top:16px;">Checklist final en la diapositiva anterior · bloques en las diapositivas 5–9.</p>
 </section>
 
 </main>
 
 <nav class="controls" aria-label="Navegación de diapositivas">
   <button id="prev" type="button" aria-label="Anterior">◀ Anterior</button>
-  <span class="cindex" id="cindex">Diapositiva 1 de 24</span>
+  <span class="cindex" id="cindex">Diapositiva 1 de 23</span>
   <button id="next" type="button" aria-label="Siguiente">Siguiente ▶</button>
 </nav>
 
