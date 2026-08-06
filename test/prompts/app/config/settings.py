@@ -12,6 +12,10 @@ _DEFAULTS = {
     "modelsDir": str(defaultModelsDir()),
     "reportsDir": str(defaultReportsDir()),
     "lastModelPath": "",
+    "llmProvider": "local",
+    "openaiApiKey": "",
+    "anthropicApiKey": "",
+    "ollamaModel": "llama3.2",
 }
 
 
