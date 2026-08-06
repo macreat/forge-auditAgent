@@ -26,11 +26,11 @@ Chain strategy: pending
 
 ## Phase 1: Foundation & Packaging
 
-- [ ] 1.1 requirements.txt: add pinned `nbformat` (R11)
+- [x] 1.1 requirements.txt: add pinned `nbformat` (R11)
 - [x] 1.2 settings.py `_DEFAULTS`: +`llmProvider`, `openaiApiKey`, `anthropicApiKey`, `ollamaModel` (R19)
 - [x] 1.3 paths.py: `defaultNotebooksDir()` + `userNotebooksDir()` dev-vs-deploy (R20)
-- [ ] 1.4 test-prompts-app.spec: `collect_data_files("nbformat")` + hiddenimports `nbformat.validator`, `fastjsonschema`, `jsonschema` — HIGH risk (R11)
-- [ ] 1.5 test-prompts-installer.spec: same nbformat fix (R11)
+- [x] 1.4 test-prompts-app.spec: `collect_data_files("nbformat")` + hiddenimports `nbformat.validator`, `fastjsonschema`, `jsonschema` — HIGH risk (R11)
+- [x] 1.5 test-prompts-installer.spec: same nbformat fix (R11)
 
 ## Phase 2: Providers
 
