@@ -1,6 +1,7 @@
 """User settings persistence via JSON config file."""
 
 import json
+import os
 from pathlib import Path
 from app.config.paths import userConfigPath, ensureUserDirs, defaultModelsDir, defaultReportsDir
 
@@ -36,5 +37,21 @@ def load():
 
 def save(settings):
     ensureUserDirs()
-    with open(userConfigPath(), "w") as f:
+    path = userConfigPath()
+    with open(path, "w") as f:
         json.dump(settings, f, indent=2)
+    _restrictConfigPermissions(path)
+
+
+def _restrictConfigPermissions(path):
+    """Enforce owner-only permissions (0o600) on the config file.
+
+    The config stores API keys (``openaiApiKey``, ``anthropicApiKey``), so
+    it must not be readable by other users. Best-effort: filesystems
+    without POSIX permissions raise OSError, which is ignored to preserve
+    the save behavior.
+    """
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
