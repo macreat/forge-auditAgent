@@ -34,10 +34,14 @@ Chain strategy: pending
 
 ## Phase 2: Providers
 
-- [ ] 2.1 utils.py: `LLMProvider` ABC — async `draft_section(header, instructions, source_context) -> str`, raises `ProviderError` (R14)
-- [ ] 2.2 utils.py: implement Local (llama.cpp), OpenAI, Anthropic (`/v1/messages`, `x-api-key`, separate system), Ollama (localhost:11434) via httpx (R14)
-- [ ] 2.3 utils.py: `create_provider(cfg)` dispatch on `llmProvider`; `ollamaModel` falls back to `"llama3.2"`; keys never in prompts (R14, R19)
-- [ ] 2.4 Probes: MockTransport asserting URL/headers/body per provider; keys masked, never logged (R19)
+- [x] 2.1 utils.py: `LLMProvider` ABC — async `draft_section(header, instructions, source_context) -> str`, raises `ProviderError` (R14)
+- [x] 2.2 utils.py: implement Local (llama.cpp), OpenAI, Anthropic (`/v1/messages`, `x-api-key`, separate system), Ollama (localhost:11434) via httpx (R14)
+- [x] 2.3 utils.py: `create_provider(cfg)` dispatch on `llmProvider`; `ollamaModel` falls back to `"llama3.2"`; keys never in prompts (R14, R19)
+- [x] 2.4 Probes: `tools/provider_probe.py` MockTransport asserting URL/headers/body per provider; keys masked, never logged (R19)
+- [x] 2.5 settings.py: config JSON written with owner-only `0o600` permissions (RSK-4)
+- [x] 2.6 llm-section-drafting spec: `ProviderError` → retry-once semantics + per-request timeout; exact `===MARKDOWN===`/`===CODE===` grammar; external-provider disclosure + default `local` (RSL-1/RLB-3, RDB-8/RLB-2, RSK-3)
+- [x] 2.7 proposal.md: list all four providers in scope; mark open questions resolved with spec/design pointers (RDB-1/RLB-8)
+- [x] 2.8 design.md: File Changes table reflects base state (config keys, `defaultNotebooksDir()`, nbformat, .spec already present) (RDB-3/RLB-7)
 
 ## Phase 3: Construct Core
 
