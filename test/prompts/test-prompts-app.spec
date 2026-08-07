@@ -1,14 +1,15 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_all, collect_data_files
 
 llama_datas, llama_binaries, llama_hidden = collect_all("llama_cpp")
+nbformat_datas = collect_data_files("nbformat")
 
 a = Analysis(
     ["app/launcher.py"],
     pathex=["."],
     binaries=llama_binaries,
-    datas=llama_datas,
+    datas=llama_datas + nbformat_datas,
     hiddenimports=[
         "llama_cpp",
         "llama_cpp.server",
@@ -28,6 +29,9 @@ a = Analysis(
         "diskcache",
         "jinja2",
         "pydantic_settings",
+        "nbformat.validator",
+        "fastjsonschema",
+        "jsonschema",
     ] + llama_hidden,
     hookspath=[],
     hooksconfig={},

@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Metodología de construcción de prompts · Método en 5 pasos para el equipo</title>
+<style>
+/*
+  Tema: Ocean Depths (base) + acentos semánticos de vía.
+  Una sola hoja CSS inline. Sin fuentes externas, sin CDN (NFR-2).
+  Stack de fuentes de sistema (NFR-2): DejaVu Primero.
+*/
+:root{
+  --bg:#1a2332;          /* navy fondo */
+  --cream:#f1faee;       /* superficie / texto claro */
+  --teal:#2d8b8b;        /* acento base */
+  --seafoam:#a8dadc;     /* acento claro / vía verificación */
+  --trackA:#2d8b8b;      /* Vía A  teal   */
+  --trackB:#d97706;      /* Vía B  amber  */
+  --multi:#7c3aed;       /* multiagente purple */
+  --ok:#3f9e4d;          /* método green */
+  --ink:#0e1622;         /* texto sobre superficies claras */
+  --subtle:#b9c7d1;      /* gris azulado para texto secundario */
+  --line:rgba(241,250,238,.14);
+  --card:rgba(241,250,238,.05);
+  --radius:2px;          /* esquinas casi rectas, anti-slop */
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg);
+  color:var(--cream);
+  font-family:"DejaVu Sans",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  font-size:16px;
+  line-height:1.55;
+}
+/* Fuentes mono para prompts/código */
+.mono,pre.code,code,.matrix code{
+  font-family:ui-monospace,"Cascadia Code","JetBrains Mono",Menlo,Consolas,monospace;
+}
+
+/* ---------- Estructura de tapa ---------- */
+.masthead{
+  display:none; /* visible solo en modo JS (deckjs) */
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  height:46px;background:rgba(26,35,50,.92);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:14px;padding:0 24px;
+  font-size:12.5px;letter-spacing:.04em;color:var(--subtle);
+}
+body.deckjs .masthead{display:flex;}
+.masthead .mtitle{font-weight:700;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.masthead .mseclabel{white-space:nowrap;color:var(--seafoam);}
+.masthead .progress-wrap{flex:1;display:flex;align-items:center;gap:10px;}
+.progress{
+  flex:1;height:6px;background:rgba(241,250,238,.15);border-radius:0;
+}
+.progress > i{
+  display:block;height:100%;width:0%;background:var(--teal);transition:width .18s ease;
+}
+.slide-counter{white-space:nowrap;color:var(--cream);font-variant-numeric:tabular-nums;}
+.slide-counter b{color:var(--seafoam);}
+
+/* ---------- Contenedor general de la página ---------- */
+.page-wrap{max-width:1080px;margin:0 auto;padding:64px 24px;}
+
+/* ---------- Modo sin JS: todo el deck apilado y legible (noscript fallback) ---------- */
+.slide{
+  display:block;
+  padding:34px 38px;margin-bottom:40px;
+  border:1px solid var(--line);background:var(--card);
+  border-radius:var(--radius);
+}
+/* Modo con JS: un slide a la vez */
+body.deckjs .slide{display:none;}
+body.deckjs .slide.active{display:block;}
+
+/* ---------- Navegación (solo en modo JS) ---------- */
+.controls{display:none;
+  max-width:1080px;margin:0 auto 40px;padding:0 24px;
+}
+body.deckjs .controls{display:flex;justify-content:space-between;align-items:center;gap:12px;}
+.controls button{
+  font-family:inherit;font-size:14px;font-weight:700;
+  padding:9px 16px;cursor:pointer;border-radius:var(--radius);
+  border:1px solid var(--line);background:var(--card);color:var(--cream);
+}
+.controls button:hover:not(:disabled){border-color:var(--teal);color:var(--seafoam);}
+.controls button:disabled{opacity:.35;cursor:not-allowed;}
+.controls .cindex{color:var(--subtle);font-size:13px;}
+
+/* ---------- Tipografía de los slides ---------- */
+.slide h1{font-size:44px;line-height:1.15;margin-bottom:6px;}
+.slide h2{font-size:32px;line-height:1.2;margin-bottom:14px;}
+.slide h3{font-size:24px;margin:20px 0 8px;color:var(--seafoam);}
+.sub{color:var(--subtle);font-size:15px;max-width:78ch;}
+
+/* barra de acento 4px a la izquierda del título */
+.accent-bar{width:52px;height:4px;background:var(--teal);margin:8px 0 18px;border-radius:0;}
+[data-track="A"] .accent-bar{width:52px;height:4px;background:var(--trackA);}
+[data-track="B"] .accent-bar{background:var(--trackB);}
+[data-track="multi"] .accent-bar{background:var(--multi);}
+[data-track="method"] .accent-bar{background:var(--ok);}
+[data-track="verify"] .accent-bar{background:var(--seafoam);}
+
+/* ---------- Badges de vía / etiqueta ---------- */
+.badge{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.05em;
+  padding:4px 10px;border-radius:var(--radius);text-transform:uppercase;
+  background:var(--seafoam);color:var(--ink);margin:0 6px 10px 0;vertical-align:middle;
+}
+[data-track="A"] .badge{background:var(--trackA);color:var(--ink);}
+[data-track="B"] .badge{background:var(--trackB);color:#fff;}
+[data-track="multi"] .badge{background:var(--multi);color:#fff;}
+[data-track="method"] .badge{background:var(--ok);color:var(--ink);}
+[data-track="verify"] .badge{background:var(--seafoam);color:var(--ink);}
+
+/* ---------- Paneles / columnas / bloques ---------- */
+.grid{display:grid;gap:16px;}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g2{grid-template-columns:1fr 1fr;}
+@media (max-width:840px){.g3,.g2{grid-template-columns:1fr;}}
+.panel{
+  background:var(--card);border:1px solid var(--line);
+  padding:18px 20px;border-radius:var(--radius);border-left:4px solid var(--card);
+}
+.panel h4{font-size:17px;margin-bottom:6px;}
+.panel p{font-size:14.5px;color:var(--subtle);}
+.panel strong{color:var(--cream);}
+.panel .stepnum{font-size:12px;font-weight:700;color:var(--seafoam);letter-spacing:.06em;}
+
+/* mini panels de "qué/por qué/cómo" */
+.qpqh{display:grid;gap:10px;}
+.qpqh .q{background:rgba(45,139,139,.12);border-left:3px solid var(--teal);padding:8px 12px;}
+.qpqh b{color:var(--seafoam);}
+
+/* ---------- Checklist ---------- */
+.checklist{list-style:none;counter-reset:step;}
+.checklist li{
+  counter-increment:step;position:relative;padding:12px 14px 12px 52px;
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  margin-bottom:10px;font-size:15px;
+}
+.checklist li::before{
+  content:counter(step);position:absolute;left:14px;top:12px;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  background:var(--teal);color:var(--ink);font-weight:700;border-radius:var(--radius);
+}
+.checklist li b{color:var(--seafoam);}
+/* checklist simple (sin contador, puro checkbox) */
+.checklist.plain{list-style:none;}
+.checklist.plain li::before{content:"\2713";background:transparent;color:var(--ok);}
+.checklist.plain li{padding-left:44px;}
+
+/* ---------- Bloques de código / prompts ---------- */
+pre.code{
+  background:var(--ink);color:#e6eef5;border:1px solid var(--line);
+  border-left:4px solid var(--teal);
+  border-radius:var(--radius);padding:14px 16px;font-size:13.2px;line-height:1.5;
+  overflow-x:auto;white-space:pre;margin:12px 0;
+}
+pre.code.trackA{border-left-color:var(--trackA);}
+pre.code.trackB{border-left-color:var(--trackB);}
+pre.code.multi{border-left-color:var(--multi);}
+pre.code.verify{border-left-color:var(--seafoam);}
+pre.code .cmt{color:#8fb3c4;}
+.code-label{display:inline-block;font-size:11px;letter-spacing:.08em;color:var(--subtle);margin-bottom:4px;}
+
+/* antes/después mini */
+.abd{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0;}
+@media (max-width:840px){.abd{grid-template-columns:1fr;}}
+.abd .tag{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;}
+.abd .bad{color:var(--subtle);}
+.abd .good{color:var(--ok);}
+
+/* ---------- Tabla matriz ---------- */
+.matrix{width:100%;border-collapse:collapse;font-size:13.8px;margin:12px 0;}
+.matrix th,.matrix td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top;}
+.matrix th{background:rgba(241,250,238,.08);color:var(--cream);}
+.matrix .rA{background:rgba(45,139,139,.18);}
+.matrix .rB{background:rgba(217,119,6,.18);}
+.matrix .rN{color:var(--subtle);}
+.matrix code{font-size:12.5px;}
+
+/* ---------- Cita / fuentes ---------- */
+cite{font-style:normal;}
+.src-table{width:100%;border-collapse:collapse;font-size:13.4px;margin:10px 0;}
+.src-table th,.src-table td{border:1px solid var(--line);padding:8px 10px;text-align:left;vertical-align:top;}
+.src-table th{background:rgba(241,250,238,.08);}
+.src-table code{font-size:12px;color:var(--seafoam);}
+.src-table .step{color:var(--ok);font-weight:700;}
+
+/* ---------- Portada ---------- */
+.cover{padding:70px 60px;}
+.cover .kicker{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;}
+.cover h1{font-size:46px;line-height:1.12;margin-bottom:8px;}
+.cover .tager{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 18px;}
+.cover .meta{color:var(--subtle);font-size:15px;}
+.cover .usos{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px;}
+
+/* ---------- Divisor de sección ---------- */
+.divider{text-align:left;background:transparent;border:none;padding:70px 60px;}
+.divider .big{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:110px;font-weight:800;line-height:1;color:var(--teal);}
+.divider h2{font-size:38px;margin:6px 0 4px;}
+.divider .sub{max-width:60ch;}
+
+/* ---------- SVG diagramas ---------- */
+.flow{width:100%;max-width:820px;height:auto;display:block;margin:10px auto 0;}
+.node{fill:var(--ink);stroke:var(--line);}
+.nA{fill:rgba(45,139,139,.22);stroke:var(--trackA);}
+.nB{fill:rgba(217,119,6,.22);stroke:var(--trackB);}
+.nMulti{fill:rgba(124,58,237,.22);stroke:var(--multi);}
+.nVer{fill:rgba(168,218,220,.22);stroke:var(--seafoam);}
+.ntxt{fill:var(--cream);font-size:13px;font-family:"DejaVu Sans",system-ui,sans-serif;}
+.ntxt.dim{fill:var(--subtle);}
+.edge{stroke:var(--line);stroke-width:1.5;fill:none;}
+.edgeA{stroke:var(--trackA);stroke-width:1.5;fill:none;}
+.edgeB{stroke:var(--trackB);stroke-width:1.5;fill:none;}
+.edgeM{stroke:var(--multi);stroke-width:1.5;fill:none;}
+
+/* aviso de esquinas */
+h1,h2,h3,.badge,.panel,.checklist li,.matrix th,.matrix td{color-scheme:dark;}
+</style>
+</head>
+<body>
+
+<!-- ============ MASTHEAD ============ -->
+<header class="masthead">
+  <span class="mtitle">Metodología de construcción de prompts</span>
+  <span class="mseclabel" id="msec" aria-hidden="true">Portada</span>
+  <span class="progress-wrap">
+    <span class="progress"><i id="bar"></i></span>
+    <span class="slide-counter" aria-live="polite" aria-atomic="true"><b id="cur">1</b> / <span id="tot">23</span></span>
+  </span>
+</header>
+
+<main class="deck">
+
+<!-- ================================================================ -->
+<!-- s1 · Portada (T1 / FR-1)                                         -->
+<!-- ================================================================ -->
+<section class="slide cover" id="s1" data-track="method">
+  <span class="badge">Método en 5 pasos</span>
+  <p class="kicker">Capacitación del equipo · Material de referencia</p>
+  <h1>Metodología de construcción de prompts</h1>
+  <div class="accent-bar"></div>
+  <p class="sub">Un método único, repetible y verificable para que el equipo construya prompts <strong>consistentes, conscientes de la capacidad real del modelo y auditables</strong>. Se aplica en dos momentos: como <strong>sesión de equipo</strong> y como <strong>referencia diaria</strong> al construir un prompt.</p>
+  <div class="usos">
+    <span class="badge" style="background:var(--teal);color:var(--ink);">Uso 1 · Presentación</span>
+    <span class="badge" style="background:var(--seafoam);color:var(--ink);">Uso 2 · Referencia</span>
+    <span class="badge" style="background:var(--ok);color:var(--ink);">Audiencia · Equipo</span>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s2 · Agenda (FR-12)                                              -->
+<!-- ================================================================ -->
+<section class="slide" id="s2">
+  <h2>Agenda</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">Cuatro partes, en orden de aprendizaje: el método base, cada vía de aplicación y el cierre con garantía de calidad.</p>
+  <ol class="checklist">
+    <li><b>Método base de construcción</b> — los 5 pasos y el detalle por bloques (ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT).</li>
+    <li><b>Construcción para tareas básicas</b> — Vía A y la matriz de técnicas.</li>
+    <li><b>Construcción para LLMs agénticos</b> — prompt de sistema, RAG y tool/function calling.</li>
+    <li><b>Garantía y cierre</b> — verificación, fundamentación bibliográfica y checklist final.</li>
+  </ol>
+</section>
+
+<!-- ================================================================ -->
+<!-- s3 · Método en una página (T3 / FR-3)                            -->
+<!-- ================================================================ -->
+
+<!-- ================================================================ -->
+<!-- s4 · Paso 2 · Conocer tu modelo (T3 / FR-7)                      -->
+<!-- ================================================================ -->
+
+<!-- ================================================================ -->
+<!-- s5 · Método en una página (T3 / FR-3)                            -->
+<!-- ================================================================ -->
+<section class="slide" id="s3" data-track="method">
+  <h2>Método en una página · 5 pasos</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">La secuencia completa, de un vistazo. Cada paso se detalla después.</p>
+  <ol class="checklist">
+    <li><b>Enmarca la tarea</b> · ¿Qué problema concreto resuelves? ¿Salida esperada?</li>
+    <li><b>Conoce tu modelo</b> · <span class="mono" style="color:var(--subtle)">(consciente de capacidad)</span> ventana de contexto, seguimiento de instrucciones, profundidad de razonamiento, cuantización.</li>
+    <li><b>Construye el prompt</b> · con los bloques <b>ROLE · OBJECTIVE · CONTEXT · REASONING</b> + <b>OUTPUT FORMAT</b>.</li>
+    <li><b>Verifica</b> · <i>determinista primero</i>, LLM-juez después para lo subjetivo.</li>
+    <li><b>Itera y finaliza</b> · contra <b>condiciones de aceptación</b>; ajusta y cierra.</li>
+  </ol>
+</section>
+
+<!-- ================================================================ -->
+<!-- s6 · Paso 2 · Conocer tu modelo (T3 / FR-7)                      -->
+<!-- ================================================================ -->
+<section class="slide" id="s4" data-track="method">
+  <h2>Paso 2 · Conoce tu modelo</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">Cuatro dimensiones de capacidad que deciden <em>cómo</em> escribes el prompt. Un estilo no le sirve a todos los modelos.</p>
+  <div class="grid g3" style="margin-top:16px;">
+    <div class="panel" style="border-left-color:var(--teal);"><h4>1 · Ventana de contexto</h4><p>Cuánto texto puedes incluir. Modelos locales suelen tener <strong>menos contexto</strong>: acorta CONTEXT y divide la tarea.</p></div>
+    <div class="panel" style="border-left-color:var(--teal);"><h4>2 · Seguimiento de instrucciones</h4><p>Si el modelo ignora reglas largas, usa <strong>ORGANIZATION simple</strong>: una instrucción por párrafo, formato corto.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>3 · Profundidad de razonamiento</h4><p>Modelos capaces toleran <strong>REASONING extenso y autoevaluación</strong>. Modelos chicos colapsan ante cadenas largas.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>4 · Cuantización</h4><p>Un GGUF Q4 cuantizado pierde matiz frente a su versión completa. <strong>Baja la exigencia</strong> de estilo y razonamiento.</p></div>
+    <div class="panel" style="border-left-color:var(--ok);"><h4>Regla práctica</h4><p>Un prompt largo y sofisticado es <strong>contraproducente</strong> en un modelo pequeño; uno trunco desaprovecha un modelo grande.</p></div>
+    <div class="panel" style="border-left-color:var(--seafoam);"><h4>Ojo: dos vías</h4><p>Esto da origen a las <b>Vía A</b> (modelos locales pequeños) y <b>Vía B</b> (LLM capaces) que vemos adelante.</p></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s7 · Bloque ROLE (T4 / FR-4, FR-14)                              -->
+<!-- ================================================================ -->
+<section class="slide" id="s5" data-track="method">
+  <h2>Bloque ROLE</h2>
+  <div class="accent-bar"></div>
+  <div class="qpqh">
+    <div class="q"><b>Qué</b> — la posición o rol desde el que responde el modelo: audiencia, contexto profesional, tono.</div>
+    <div class="q"><b>Por qué</b> — alinea preactivamente el registro, el vocabulario y el nivel de detalle; reduce errores de estilo.</div>
+    <div class="q"><b>Cómo</b> — una frase al inicio: quién eres, a quién le hablas, para qué contexto.</div>
+  </div>
+  <h3>Mini ejemplo</h3>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackA">Explique los costos del modelo.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackA">Eres un <span class="cmt">financiero</span> senior. Explica los costes de inferencia a un <span class="cmt">CTO no técnico</span>, en 3 frases y sin métricas internas.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s8 · Bloque OBJECTIVE (T4 / FR-4, FR-14)                         -->
+<!-- ================================================================ -->
+<section class="slide" id="s6" data-track="method">
+  <h2>Bloque OBJECTIVE</h2>
+  <div class="accent-bar"></div>
+  <div class="qpqh">
+    <div class="q"><b>Qué</b> — el objetivo concreto y medible que debe lograr la respuesta.</div>
+    <div class="q"><b>Por qué</b> — un objetivo bien definido evita respuestas genéricas y permite verificar el resultado después.</div>
+    <div class="q"><b>Cómo</b> — verbo de acción + entregable + criterio de suficiencia: «clasifica…», «resume… en N líneas».</div>
+  </div>
+  <h3>Mini ejemplo</h3>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Analiza este log de errores.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Objetivo: <span class="cmt">agrupar los 5 patrones de error más frecuentes</span> del log y ordenarlos por impacto. Entregable: tabla causa → recuento → sugerencia.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s9 · Bloque CONTEXT (T4 / FR-4, FR-14)                           -->
+<!-- ================================================================ -->
+<section class="slide" id="s7" data-track="method">
+  <h2>Bloque CONTEXT</h2>
+  <div class="accent-bar"></div>
+  <div class="qpqh">
+    <div class="q"><b>Qué</b> — la información factual y las restricciones que el modelo necesita para no inventar.</div>
+    <div class="q"><b>Por qué</b> — la principal fuente de alucinación es la falta de contexto: el modelo rellena con lo que «sabe».</div>
+    <div class="q"><b>Cómo</b> — datos duros, fuentes, restricciones y supuestos. Todo lo que no esté acá, el modelo lo adivina.</div>
+  </div>
+  <h3>Mini ejemplo</h3>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackA">Resume el documento adjunto.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackA">Contexto: documento <span class="cmt">NotebookBuildAudit v2</span>, sección §3. <span class="cmt">Restricción</span>: solo fuentes del archivo, nada externo. <span class="cmt">Supuesto</span>: el lector ya conoce el framework.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s10 · Bloque REASONING (T4 / FR-4, FR-14)                        -->
+<!-- ================================================================ -->
+<section class="slide" id="s8" data-track="method">
+  <h2>Bloque REASONING</h2>
+  <div class="accent-bar"></div>
+  <div class="qpqh">
+    <div class="q"><b>Qué</b> — cómo debe razonar: paso a paso, con justificación, o decidir de un vistazo.</div>
+    <div class="q"><b>Por qué</b> — pedir el razonamiento «en voz alta» mejora notablemente la exactitud en tareas complejas (Cadena de pensamiento).</div>
+    <div class="q"><b>Cómo</b> — «piensa paso a paso», «muestra el cálculo», «justifica cada decisión». Resérvalo para modelos capaces.</div>
+  </div>
+  <h3>Mini ejemplo</h3>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">¿Fue viable este experimento?</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Razona paso a paso: <span class="cmt">1) define el umbral de viabilidad, 2) compara con las métricas, 3) justifica</span>. Recién al final emite el veredicto Sí / No.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s11 · Bloque OUTPUT FORMAT (T4 / FR-4, FR-14)                    -->
+<!-- ================================================================ -->
+<section class="slide" id="s9" data-track="method">
+  <h2>Bloque OUTPUT FORMAT</h2>
+  <div class="accent-bar"></div>
+  <div class="qpqh">
+    <div class="q"><b>Qué</b> — la forma exacta de la respuesta: JSON, tabla, lista, longitud máxima.</div>
+    <div class="q"><b>Por qué</b> — un formato fijo hace la salida <strong>parseable y verificable</strong>, y obliga al modelo a ser conciso.</div>
+    <div class="q"><b>Cómo</b> — plantilla literal + límites + ejemplo de salida esperada.</div>
+  </div>
+  <h3>Mini ejemplo</h3>
+  <pre class="code trackB">Formato de salida (JSON estricto, nada más):
+{"resumen": "...", "riesgos": ["..."], "veredicto": "Sí"|"No"}</pre>
+  <table class="matrix">
+    <tr><th>Sin formato</th><th>Con formato</th></tr>
+    <tr><td class="rN">Texto libre, difícil de procesar y comparar.</td><td class="rA">Salida fija, parseable, testeable de forma determinista.</td></tr>
+  </table>
+</section>
+
+<!-- ================================================================ -->
+<!-- s12 · Paso 5 · Iterar y finalizar (T3 / FR-3)                    -->
+<!-- ================================================================ -->
+<section class="slide" id="s10" data-track="method">
+  <h2>Paso 5 · Itera y finaliza</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">El bucle cierra cuando el prompt cumple sus <strong>condiciones de aceptación</strong>.</p>
+  <h3>Condiciones de aceptación (FINALIZATION)</h3>
+  <ul class="checklist plain">
+    <li><b>Claro:</b> otro miembro del equipo puede entender el objetivo sin preguntas.</li>
+    <li><b>Conforme al modelo:</b> la técnica coincide con la capacidad (ventana, seguimiento, cuantización).</li>
+    <li><b>Verificable:</b> se puede decidir, por inspección o por prueba, si la salida es correcta.</li>
+    <li><b>Estable:</b> produce resultados consistentes en intentos repetidos, no por suerte.</li>
+    <li><b>Documentado:</b> queda el prompt + su criterio de verificación para reuso del equipo.</li>
+  </ul>
+  <p class="sub" style="margin-top:12px;">Si no cumple: <strong>vuelve al paso 1</strong> (¿tarea mal enmarcada?), al 2 (¿modelo equivocado?) o ajusta un bloque. Repite hasta aceptar.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s11 · DIVISOR · Construcción para tareas básicas (Parte 2)       -->
+<!-- ================================================================ -->
+<section class="slide divider" id="s11">
+  <span class="badge">Parte 2</span>
+  <div class="big" style="color:var(--trackA);">2</div>
+  <h2>Construcción para tareas básicas</h2>
+  <p class="sub">Vía A · tareas discretas con modelos locales pequeños y formato estricto.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s13 · Dos vías: A vs B (T5 / FR-5)                               -->
+<!-- ================================================================ -->
+<section class="slide" id="s12">
+  <h2>Enfoque para tareas básicas (Vía A)</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">Para tareas discretas y modelos locales pequeños: un prompt directo, de contexto corto y salida estricta.</p>
+  <div class="panel" style="border-left-color:var(--trackA);margin-top:14px;">
+    <span class="badge">Vía A · Modelos locales</span>
+    <h4>Simple · pequeño · local (GGUF)</h4>
+    <p><strong>Enfoque:</strong> contexto corto, una instrucción por párrafo, OUTPUT FORMAT estricto y poca REASONING encadenada.</p>
+    <p><strong>Encaja:</strong> tareas discretas, clasificación, extracción y resumen corto; sin largas cadenas de razonamiento.</p>
+  </div>
+  <p class="sub" style="margin-top:12px;">Para tareas abiertas con LLM capaces (análisis, síntesis, razonamiento multi-paso), el enfoque agéntico se desarrolla en la <strong>Parte 3 (Vía B)</strong>.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s14 · Matriz de técnicas (T5 / FR-6)                             -->
+<!-- ================================================================ -->
+<section class="slide" id="s13">
+  <h2>Matriz de técnicas</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">Para tareas básicas (Vía A) se priorizan <strong>zero-shot</strong> y <strong>few-shot</strong>; el resto aplica según la capacidad del modelo. Regla de dos ejes de Chen 2025: <strong>tarea simple + modelo capaz → one-shot</strong>; <strong>tarea compleja + modelo menos capaz → few-shot</strong>.</p>
+  <table class="matrix">
+    <tr><th>Técnica</th><th>Tarea simple · modelo capaz</th><th>Tarea compleja · modelo limitado</th></tr>
+    <tr><td><code>Zero-shot</code></td><td class="rB">Muy eficiente · primera opción</td><td class="rN">Arriesgado · omite contexto</td></tr>
+    <tr><td><code>Few-shot</code></td><td class="rN">Útil si hay ejemplos disponibles</td><td class="rB">Elegida · ejemplos anclan el formato</td></tr>
+    <tr><td><code>CoT (cadena de pensamiento)</code></td><td class="rB">Potencia resultados simples</td><td class="rB">Indispensable en razonamiento</td></tr>
+    <tr><td><code>Descomposición</code></td><td class="rN">Sobrecarga innecesaria</td><td class="rB">Divide y vencerás · ideal</td></tr>
+    <tr><td><code>Tree-of-Thoughts</code></td><td class="rN">Excesivo</td><td class="rN">Solo modelos muy capaces</td></tr>
+    <tr><td><code>Ensemblado</code></td><td class="rN">Caro de mantener</td><td class="rB">Reduce varianza del veredicto</td></tr>
+    <tr><td><code>Autocrítica / judge</code></td><td class="rN">Overhead</td><td class="rB">Verificación subjetiva (paso 4)</td></tr>
+  </table>
+</section>
+
+<!-- ================================================================ -->
+<!-- s14 · DIVISOR · Construcción para LLMs agénticos (Parte 3)        -->
+<!-- ================================================================ -->
+<section class="slide divider" id="s14">
+  <span class="badge">Parte 3</span>
+  <div class="big" style="color:var(--trackB);">3</div>
+  <h2>Construcción para LLMs agénticos</h2>
+  <p class="sub">Prompt de sistema, ensamblado RAG y tool/function calling en APIs.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s15 · Prompt de sistema en entornos de agentes (Vía B)            -->
+<!-- ================================================================ -->
+<section class="slide" id="s15" data-track="B">
+  <h2>Prompt de sistema en entornos de agentes</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">En un agente, el prompt de sistema es persistente y de alcance global: no describe una única respuesta, sino el comportamiento en cada turno y la relación con otras herramientas.</p>
+  <div class="grid g3" style="margin-top:14px;">
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Rol y objetivo a nivel sistema</h4><p>ROLE y OBJECTIVE se declaran una vez y rigen toda la sesión, no cada llamada.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Catálogo de herramientas</h4><p>Se enumeran y describen las funciones que el modelo puede invocar y en qué condiciones.</p></div>
+    <div class="panel" style="border-left-color:var(--trackB);"><h4>Formato entre turnos</h4><p>OUTPUT FORMAT se especifica tanto para respuestas como para solicitudes de tool call.</p></div>
+  </div>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Eres asistente. Responde la pregunta.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Eres el <span class="cmt">agente de resolución de incidencias</span>. Resuelve cada turno usando las herramientas <span class="cmt">buscar_ticket</span>, <span class="cmt">reabrir</span>, <span class="cmt">escalar</span>. No asumas que eres el único actor: invoca la herramienta indicada antes de responder.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s16 · RAG: ensamblado del contexto (Vía B)                        -->
+<!-- ================================================================ -->
+<section class="slide" id="s16" data-track="B">
+  <h2>RAG: ensamblado del contexto</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">La recuperación llena el bloque CONTEXT con fragmentos del corpus; el prompt ata la respuesta a esa evidencia. Consistente con MODP: contexto ajustado al modelo, no el corpus completo.</p>
+  <ul class="checklist plain">
+    <li><b>Inyecta pasajes recuperados</b> en <b>CONTEXT</b>, cada uno con un marcador (n.º de fragmento) y su fuente.</li>
+    <li><b>Fundamenta las respuestas</b> solo en los pasajes provistos; nada de conocimiento implícito.</li>
+    <li><b>Cita fuentes con punteros</b> junto a cada afirmación.</li>
+    <li><b>Declara evidencia ausente:</b> «no puedo afirmar esto con la evidencia disponible».</li>
+    <li><b>Define el límite de conocimiento:</b> no inventar más allá del contexto provisto (principal fuente de alucinación).</li>
+  </ul>
+  <pre class="code trackB">Contexto: [pasajes recuperados, cada uno con n.º de fragmento]
+<span class="cmt">Fundamenta</span> cada afirmación en los pasajes y cita el n.º de fragmento.
+Si no hay evidencia, responde: «no puedo afirmarlo con la evidencia disponible».</pre>
+</section>
+
+<!-- ================================================================ -->
+<!-- s17 · Tool/function calling en APIs (Vía B)                       -->
+<!-- ================================================================ -->
+<section class="slide" id="s17" data-track="B">
+  <h2>Tool/function calling en APIs</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Vía B · Agénticos</span>
+  <p class="sub">El prompt define cuándo y cómo el modelo invoca funciones, no solo qué debe responder.</p>
+  <ul class="checklist plain">
+    <li><b>Define finalidad y JSON Schema</b> de cada herramienta en OBJECTIVE / OUTPUT FORMAT.</li>
+    <li><b>Instruye cuándo llamar</b> en lugar de responder, y cuándo responder sin llamar.</li>
+    <li><b>Maneja parámetros faltantes</b> o incompletos: solicitar el dato o completarlo con un valor por defecto explícito.</li>
+    <li><b>Errores y reintentos:</b> ante una llamada fallida, interpretar el error y reintentar una vez antes de escalar.</li>
+    <li><b>Fallback en texto libre:</b> si no aplica ninguna herramienta, responder de forma directa y clara.</li>
+  </ul>
+  <div class="abd">
+    <div><span class="tag bad">ANTES</span><pre class="code trackB">Herramientas: buscar, pagar.</pre></div>
+    <div><span class="tag good">DESPUÉS</span><pre class="code trackB">Objetivo: <span class="cmt">liquidar la factura</span>.
+Herramienta <span class="cmt">pagar_factura {factura_id:int, metodo:string}</span>:
+ si falta <span class="cmt">metodo</span>, solicítalo al usuario; si la llamada falla, reintenta una vez y luego informa. Si no aplica herramienta, responde en texto libre.</pre></div>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<!-- s15 · De un agente a multiagente (T6 / FR-8)                     -->
+<!-- ================================================================ -->
+<section class="slide" id="s18" data-track="multi">
+  <h2>De un agente a multiagente</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Multiagente</span>
+  <p class="sub">Los cuatro bloques funcionan como <strong>contratos de coordinación</strong> entre agentes. Cada agente tiene su propio ROLE/OBJECTIVE, CONTEXT aislado y OUTPUT FORMAT, y los REASONING se conectan.</p>
+  <svg class="flow" viewBox="0 0 820 200" role="img" aria-label="Orquestación multiagente con bloques ROLE OBJECTIVE CONTEXT REASONING">
+    <rect class="node nA" x="10" y="68" width="180" height="64" rx="2"/>
+    <text class="ntxt" x="100" y="94" text-anchor="middle">Agente A · ROLE/OBJECTIVE</text>
+    <text class="ntxt dim" x="100" y="116" text-anchor="middle">CONTEXT propio + OUTPUT</text>
+    <rect class="node nB" x="450" y="68" width="180" height="64" rx="2"/>
+    <text class="ntxt" x="540" y="94" text-anchor="middle">Agente B · ROLE/OBJECTIVE</text>
+    <text class="ntxt dim" x="540" y="116" text-anchor="middle">consume output de A</text>
+    <rect class="node nMulti" x="230" y="10" width="180" height="48" rx="2"/>
+    <text class="ntxt" x="320" y="36" text-anchor="middle">Orquestador
+REASONING + enrutado</text>
+    <rect class="node nVer" x="640" y="68" width="170" height="64" rx="2"/>
+    <text class="ntxt" x="725" y="94" text-anchor="middle">Juez (Paso 4)</text>
+    <text class="ntxt dim" x="725" y="116" text-anchor="middle">verifica el resultado</text>
+    <path class="edgeM" d="M320 58 L320 84 L190 100"/>
+    <path class="edgeA" d="M410 100 L450 100"/>
+    <path class="edgeM" d="M320 58 L320 68"/>
+    <path class="edgeB" d="M630 100 L640 100"/>
+    <path class="edge" d="M102 84 L102 76"/>
+  </svg>
+  <p class="sub" style="margin-top:10px;"><strong>Diseño de prompt agéntico:</strong> una REASONING global (el orquestador decide quién sigue), OBJECTIVE por agente, CONTEXT aislado por seguridad, y OUTPUT FORMAT que encadena lo que un agente entrega al otro. El Paso 4 (juez) cierra el rizo.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s19 · Verificación: determinista + LLM-juez (T7 / FR-9)          -->
+<!-- ================================================================ -->
+<section class="slide" id="s19" data-track="verify">
+  <h2>Verificación: determinista + LLM-juez</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Verificación</span>
+  <p class="sub">Dos capas (cf. llmOps.md): <strong>Layer 1</strong> verificación determinista, <strong>Layer 2</strong> LLM-as-a-Judge.</p>
+  <div class="grid g2" style="margin-top:14px;">
+    <div class="panel" style="border-left-color:var(--ok);">
+      <h4>Determinista primero (Layer 1)</h4>
+      <p><strong>Cuando la corrección es objetiva:</strong> parseo de JSON, existencia de archivos, checksum, ejecución exitosa, formato fijo.</p>
+      <p>Binario y reproducible: comprobar acá lo que se pueda, sin LLM.</p>
+    </div>
+    <div class="panel" style="border-left-color:var(--seafoam);">
+      <h4>LLM-juez (Layer 2)</h4>
+      <p><strong>Solo para lo subjetivo:</strong> claridad, coherencia metodológica, calidad de redacción.</p>
+      <p>Descompón en criterios explícitos (estilo G-Eval), nunca una nota global suelta. Cuida los sesgos (posición, verbosidad, automejora).</p>
+    </div>
+  </div>
+  <svg class="flow" viewBox="0 0 820 120" role="img" aria-label="Flujo determinista primero, luego LLM-juez">
+    <rect class="node nVer" x="150" y="28" width="170" height="64" rx="2"/>
+    <text class="ntxt" x="235" y="60" text-anchor="middle">Chequeos deterministas</text>
+    <rect class="node" x="470" y="28" width="200" height="64" rx="2"/>
+    <text class="ntxt" x="570" y="52" text-anchor="middle">LLM-juez</text>
+    <text class="ntxt dim" x="570" y="74" text-anchor="middle">solo criterios subjetivos</text>
+    <path class="edgeA" d="M150 60 L120 60 L120 20 L150 20"/>
+    <text class="ntxt dim" x="120" y="52" text-anchor="middle">falla?</text>
+    <path class="edgeA" d="M320 60 L470 60"/>
+    <text class="ntxt dim" x="395" y="52" text-anchor="middle">objetivo ok →</text>
+  </svg>
+</section>
+
+<!-- ================================================================ -->
+<!-- s20 · Checklist simple de entrada (T7 / FR-9)                    -->
+<!-- ================================================================ -->
+<section class="slide" id="s20" data-track="verify">
+  <h2>Checklist simple de entrada</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Verificación</span>
+  <p class="sub">Antes de mandar un prompt a producción o a revisión, verifica rápido:</p>
+  <ul class="checklist plain">
+    <li>¿El objetivo es <b>medible</b> y la salida tiene formato fijo?</li>
+    <li>¿Hay algún chequeo <b>determinista</b> aplicable? (JSON, parseo, compare)</li>
+    <li>Si hay criterio subjetivo, ¿hay <b>juez con criterios explícitos</b>?</li>
+    <li>¿La técnica elegida coincide con la <b>capacidad del modelo</b>? (dos vías)</li>
+    <li>¿Probé contra un <b>caso fallido conocido</b> además del caso feliz?</li>
+  </ul>
+</section>
+
+<!-- ================================================================ -->
+<!-- s21 · Fundamentación bibliográfica (T8 / FR-10, NFR-4)           -->
+<!-- ================================================================ -->
+<section class="slide" id="s21">
+  <h2>Fundamentación bibliográfica</h2>
+  <div class="accent-bar"></div>
+  <p class="sub">Fuentes primarias verificadas (2025/2026) y papers de jueces, mapeadas a los pasos del método.</p>
+  <table class="src-table">
+    <tr><th>Referencia</th><th>DOI / ID</th><th>Paso del método</th></tr>
+    <tr>
+      <td><cite>Chen et&nbsp;al. (2025), <em>Unleashing the Potential of Prompt Engineering for LLMs</em>, Patterns 6(6):101260.</cite></td>
+      <td><code>10.1016/j.patter.2025.101260</code></td>
+      <td class="step">Paso 3 · Matriz de técnicas (regla de dos ejes)</td>
+    </tr>
+    <tr>
+      <td><cite>Nema et&nbsp;al. (2025), <em>MODP — Model-Aware Optimized Prompting</em>, arXiv.</cite></td>
+      <td><code>arXiv:2504.18722</code></td>
+      <td class="step">Paso 2 · Conocer tu modelo</td>
+    </tr>
+    <tr>
+      <td><cite>Schulhoff et&nbsp;al., <em>The Prompt Report: A Systematic Survey of Prompting Techniques</em>, arXiv.</cite></td>
+      <td><code>arXiv:2406.06608</code></td>
+      <td class="step">Paso 3 · familias de técnicas</td>
+    </tr>
+    <tr>
+      <td><cite>Zheng et&nbsp;al. (2023), <em>Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena</em>.</cite></td>
+      <td><code>papel de juez</code></td>
+      <td class="step">Paso 4 · LLM-juez</td>
+    </tr>
+    <tr>
+      <td><cite>Liu et&nbsp;al. (2023), <em>G-Eval: NLG Evaluation using GPT-4 with Better Human Alignment</em>.</cite></td>
+      <td><code>juez · criterios</code></td>
+      <td class="step">Paso 4 · descomposición de criterios</td>
+    </tr>
+    <tr>
+      <td><cite>Verga et&nbsp;al. (2024), <em>Replacing Judges with Juries</em>, arXiv.</cite></td>
+      <td><code>arXiv:2404.18796</code></td>
+      <td class="step">Paso 4 · juzgados múltiples</td>
+    </tr>
+    <tr>
+      <td><cite>Saha, Wagde, Kveton (2026), <em>ROBIN-HOOD</em>, arXiv.</cite></td>
+      <td><code>arXiv:2602.15481</code></td>
+      <td class="step">Paso 4 · evaluación soporte</td>
+    </tr>
+    <tr>
+      <td><cite>Nordfors (2026), <em>The Metanym Game</em>, arXiv.</cite></td>
+      <td><code>arXiv:2606.21008</code></td>
+      <td class="step">Paso 4 · semántica de evaluación</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ================================================================ -->
+<!-- s22 · Checklist final · referencia rápida (T9 / FR-11)           -->
+<!-- ================================================================ -->
+<section class="slide" id="s22" data-track="method">
+  <h2>Checklist final · referencia rápida</h2>
+  <div class="accent-bar"></div>
+  <span class="badge">Método</span>
+  <p class="sub">El método completo en una página, para pegar en la pared (o en el archivo de prompts).</p>
+  <ol class="checklist">
+    <li><b>Enmarca</b> la tarea: problema concreto + salida esperada.</li>
+    <li><b>Conoce tu modelo</b>: ventana, seguimiento, razonamiento, cuantización → elige Vía A o Vía B.</li>
+    <li><b>Construye por bloques</b>: <b class="mono">ROLE · OBJECTIVE · CONTEXT · REASONING · OUTPUT FORMAT</b>. En Vía B agéntica, aplica los bloques al prompt de sistema, al ensamblado RAG y al tool calling.</li>
+    <li><b>Verifica</b>: determinista primero; LLM-juez con criterios explícitos para lo subjetivo.</li>
+    <li><b>Itera y finaliza</b> contra condiciones de aceptación; documenta el prompt y su verificación.</li>
+  </ol>
+  <p class="sub" style="margin-top:12px;">Si dudas de una técnica, vuelve a la <strong>matriz de técnicas</strong> (Chen 2025, dos ejes). Si dudas del resultado, corre el <strong>checklist simple de entrada</strong>.</p>
+</section>
+
+<!-- ================================================================ -->
+<!-- s23 · Cierre (end card)                                          -->
+<!-- ================================================================ -->
+<section class="slide cover divider" id="s23">
+  <span class="badge" style="background:var(--ok);color:var(--ink);">Método en 5 pasos</span>
+  <p class="kicker" style="color:var(--seafoam);">Cierre</p>
+  <h1>Construimos prompts con método, no por ensayo y error.</h1>
+  <div class="accent-bar"></div>
+  <p class="sub">Enmarcar → conocer el modelo → construir por bloques → verificar → iterar. El equipo habla un mismo idioma, en tareas básicas y en entornos agénticos.</p>
+  <p class="meta" style="color:var(--subtle);margin-top:16px;">Checklist final en la diapositiva anterior · bloques en las diapositivas 5–9.</p>
+</section>
+
+</main>
+
+<nav class="controls" aria-label="Navegación de diapositivas">
+  <button id="prev" type="button" aria-label="Anterior">◀ Anterior</button>
+  <span class="cindex" id="cindex">Diapositiva 1 de 23</span>
+  <button id="next" type="button" aria-label="Siguiente">Siguiente ▶</button>
+</nav>
+
+<noscript>
+  <div style="max-width:1080px;margin:40px auto;padding:24px;border:1px solid rgba(241,250,238,.3);border-radius:2px;background:rgba(241,250,238,.06);color:#f1faee;">
+    <p><strong>Enlace de navegación desactivado.</strong> Estás viendo todas las diapositivas apiladas (fallback sin JavaScript). Cada diapositiva queda legible y con su ancla <code>#sN</code> para referencia directa.</p>
+  </div>
+</noscript>
+
+<script>
+(function () {
+  "use strict";
+  /* ---------- deck.js: navegación lineal + hash + progreso ---------- */
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".deck .slide"));
+  var total = slides.length;
+  var cur = 0;
+  var bar = document.getElementById("bar");
+  var curEl = document.getElementById("cur");
+  var totEl = document.getElementById("tot");
+  var prev = document.getElementById("prev");
+  var next = document.getElementById("next");
+  var cindex = document.getElementById("cindex");
+  var msec = document.getElementById("msec");
+  var sectionLabels = {};
+  document.querySelectorAll(".slide").forEach(function (s) {
+    var h = s.querySelector("h1,h2");
+    if (h) sectionLabels[s.id] = h.textContent.trim();
+  });
+
+  /* Activar modo deck solo con JS disponible */
+  document.body.classList.add("deckjs");
+  totEl.textContent = String(total);
+
+  function render() {
+    slides.forEach(function (s, i) { s.classList.toggle("active", i === cur); });
+    var pct = total > 1 ? Math.round(((cur) / (total - 1)) * 100) : 0;
+    bar.style.width = pct + "%";
+    curEl.textContent = String(cur + 1);
+    cindex.textContent = "Diapositiva " + (cur + 1) + " de " + total;
+    prev.disabled = cur === 0;
+    next.disabled = cur === total - 1;
+    var id = slides[cur].id;
+    var label = sectionLabels[id] || id;
+    msec.textContent = label;
+  }
+
+  function go(n) {
+    if (n < 0 || n >= total) return;
+    cur = n;
+    if (location.hash !== "#" + slides[cur].id) {
+      history.replaceState(null, "", "#" + slides[cur].id);
+    }
+    render();
+  }
+  function nextS() { go(cur + 1); }
+  function prevS() { go(cur - 1); }
+
+  /* hash sync: inicial desde #sN */
+  function fromHash() {
+    var m = location.hash.match(/^#s(\d+)$/);
+    if (!m) return;
+    var target = 0;
+    slides.forEach(function (s, i) { if (s.id === ("s" + m[1])) target = i; });
+    go(target);
+  }
+
+  /* Bindings */
+  next.addEventListener("click", nextS);
+  prev.addEventListener("click", prevS);
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") { e.preventDefault(); nextS(); }
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); prevS(); }
+  });
+  window.addEventListener("hashchange", fromHash);
+
+  go(0);
+  fromHash(); /* re-aplica si hay ancla */
+})();
+</script>
+
+</body>
+</html>

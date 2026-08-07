@@ -1,6 +1,9 @@
 """Flet GUI for test-prompts-app.
 
-Provides tabs for hardware info, model download, server control, and settings.
+Provides tabs for hardware info, model download, server control, settings,
+benchmark, audit, and notebook construction. The tab set is driven by the
+single module-level :data:`TAB_SPEC` list, which supplies both the tab labels
+and the panel registry keys used to assemble ``panels[]`` and ``ft.Tabs``.
 """
 
 import datetime
@@ -17,10 +20,16 @@ from app.api.local import (
     downloadSelectedModel,
     AsyncLlamaServer,
 )
+from app.api.utils import ProviderError, create_provider, mask_secret
 from app.audit.export import to_json, to_pdf
 from app.audit.pipeline import AuditPipeline
 from app.config import settings
 from app.config.paths import defaultReportsDir
+from app.construct import loaders
+from app.construct.export import save_notebook
+from app.construct.models import ConstructSession
+from app.construct.scaffold import CANONICAL_HEADERS, build_scaffold
+from app.construct.writer import draft_sections
 
 
 class AppState:
@@ -28,9 +37,80 @@ class AppState:
         self.server = None
         self.serverRunning = False
         self.hardware = None
+        # Construct pipeline state (load -> scaffold -> draft -> export).
+        self.construct = None
+        # Busy guard: true while a construct draft is running; prevents
+        # concurrent runs and disables the construct buttons (RSL-2).
+        self.constructBusy = False
 
 
 state = AppState()
+
+#: Single source of truth for the tab set. Drives both the ``ft.TabBar``
+#: labels and the ``panels[]`` order assembled at the end of :func:`build`.
+#: The 6 pre-existing tabs keep their original labels and order; the 7th
+#: (Construct) tab is registered here too.
+TAB_SPEC = [
+    {"label": "Hardware", "panel": "hardwarePanel"},
+    {"label": "Models", "panel": "modelsPanel"},
+    {"label": "Server", "panel": "serverPanel"},
+    {"label": "Settings", "panel": "settingsPanel"},
+    {"label": "Benchmark", "panel": "benchmarkPanel"},
+    {"label": "Audit", "panel": "auditPanel"},
+    {"label": "Construct", "panel": "constructPanel"},
+]
+
+#: Source type -> construct loader function name (1:1 mapping used to keep
+#: the Construct panel's source-type and loader selectors in sync).
+_SOURCE_LOADER_MAP = {
+    "local": "load_local",
+    "github": "load_github",
+    "http": "load_http",
+    "drive": "load_drive",
+    "kaggle": "load_kaggle",
+}
+
+_SOURCE_HINTS = {
+    "local": "/path/to/source.md",
+    "github": "https://github.com/{owner}/{repo}/blob/{ref}/{path}",
+    "http": "https://example.com/source.txt",
+    "drive": "https://drive.google.com/uc?export=download&id=... or file ID",
+    "kaggle": "owner/slug (or kaggle.com/datasets/owner/slug URL)",
+}
+
+
+def _resolveSecretField(field_value, stored_key):
+    """Keep the stored key when the field still shows its masked form;
+    store the typed value (or an empty string to clear) otherwise.
+
+    Keys are never logged: the value returned here goes into the config
+    dict only (R19, RSK-3).
+    """
+    if field_value == mask_secret(stored_key):
+        return stored_key
+    return (field_value or "").strip()
+
+
+def _parse_kaggle(raw):
+    """Split a Kaggle dataset reference into ``(owner, slug)``.
+
+    Accepts ``owner/slug``, a ``kaggle.com/datasets/{owner}/{slug}`` URL, an
+    API download path (``kaggle.com/api/v1/datasets/download/{owner}/{slug}``),
+    or a bare API path. Returns ``("", "")`` when unparseable.
+    """
+    value = (raw or "").strip()
+    if "kaggle.com" in value:
+        value = value.split("kaggle.com")[-1].lstrip("/")
+    parts = [part for part in value.split("/") if part]
+    if "datasets" in parts:
+        index = parts.index("datasets")
+        if index + 1 < len(parts) and parts[index + 1] == "download":
+            index += 1  # api path form: datasets/download/{owner}/{slug}
+        if index + 2 < len(parts):
+            return parts[index + 1], parts[index + 2]
+    if len(parts) >= 2:
+        return parts[0], parts[1]
+    return "", ""
 
 
 def build(page: ft.Page):
@@ -86,6 +166,44 @@ def build(page: ft.Page):
         page.update()
 
     settingsModelsDir = ft.TextField(label="Models directory", value=cfg["modelsDir"], height=48, expand=True)
+
+    # --- LLM provider settings (R19, RSK-3): provider selector + masked
+    # API key fields. Keys are rendered masked (mask_secret) and are never
+    # written to status/log text.
+    providerDropdown = ft.Dropdown(
+        label="LLM provider",
+        options=[
+            ft.DropdownOption(key="local", text="Local (llama.cpp)"),
+            ft.DropdownOption(key="openai", text="OpenAI"),
+            ft.DropdownOption(key="anthropic", text="Anthropic"),
+            ft.DropdownOption(key="ollama", text="Ollama"),
+        ],
+        value=cfg.get("llmProvider", "local"),
+        width=240,
+        height=48,
+    )
+    openaiKeyField = ft.TextField(
+        label="OpenAI API key",
+        value=mask_secret(cfg.get("openaiApiKey", "")),
+        password=True,
+        can_reveal_password=True,
+        expand=True,
+        height=48,
+    )
+    anthropicKeyField = ft.TextField(
+        label="Anthropic API key",
+        value=mask_secret(cfg.get("anthropicApiKey", "")),
+        password=True,
+        can_reveal_password=True,
+        expand=True,
+        height=48,
+    )
+    ollamaModelField = ft.TextField(
+        label="Ollama model",
+        value=cfg.get("ollamaModel", "llama3.2"),
+        expand=True,
+        height=48,
+    )
 
     def log(msg):
         downloadStatus.value = msg
@@ -199,15 +317,27 @@ def build(page: ft.Page):
 
     def saveSettings(e):
         try:
-            cfg = {
+            # Snapshot the stored keys before building the new config dict
+            # (the dict literal rebinds `cfg`, so read first).
+            saved_openai_key = cfg.get("openaiApiKey", "")
+            saved_anthropic_key = cfg.get("anthropicApiKey", "")
+            new_cfg = {
                 "host": serverHost.value.strip(),
                 "port": int(serverPort.value),
                 "nGpuLayers": int(nGpuLayers.value),
                 "nCtx": int(nCtx.value),
                 "modelsDir": settingsModelsDir.value.strip(),
                 "lastModelPath": serverModel.value.strip(),
+                "llmProvider": (providerDropdown.value or "local").strip().lower(),
+                "openaiApiKey": _resolveSecretField(
+                    openaiKeyField.value, saved_openai_key
+                ),
+                "anthropicApiKey": _resolveSecretField(
+                    anthropicKeyField.value, saved_anthropic_key
+                ),
+                "ollamaModel": ollamaModelField.value.strip() or "llama3.2",
             }
-            settings.save(cfg)
+            settings.save(new_cfg)
             log("Settings saved.")
         except ValueError:
             log("Error: invalid port/layers/context values.")
@@ -257,6 +387,17 @@ def build(page: ft.Page):
         [
             ft.Text("Models directory:", weight=ft.FontWeight.BOLD),
             settingsModelsDir,
+            ft.Divider(),
+            ft.Text("LLM provider:", weight=ft.FontWeight.BOLD),
+            ft.Row([providerDropdown]),
+            ft.Text(
+                "API keys are stored in the local config file and never logged.",
+                size=12,
+                color=ft.Colors.GREY_400,
+            ),
+            openaiKeyField,
+            anthropicKeyField,
+            ollamaModelField,
             ft.Divider(),
             ft.ElevatedButton("Save", on_click=saveSettings),
         ],
@@ -833,7 +974,350 @@ def build(page: ft.Page):
         expand=True,
     )
 
-    panels = [hardwarePanel, modelsPanel, serverPanel, settingsPanel, benchmarkPanel, auditPanel]
+    # --- Construct Panel (R23) ---
+    # Source input + source type selector + loader selector. The loader
+    # selector tracks the source type 1:1 (each source type maps to exactly
+    # one construct loader).
+    constructSourceType = ft.Dropdown(
+        label="Source type",
+        options=[
+            ft.DropdownOption(key="local", text="Local file"),
+            ft.DropdownOption(key="github", text="GitHub"),
+            ft.DropdownOption(key="http", text="HTTP URL"),
+            ft.DropdownOption(key="drive", text="Google Drive"),
+            ft.DropdownOption(key="kaggle", text="Kaggle dataset"),
+        ],
+        value="local",
+        width=160,
+        height=48,
+        on_select=lambda e: _syncConstructLoader(),
+    )
+    constructLoader = ft.Dropdown(
+        label="Loader",
+        options=[
+            ft.DropdownOption(key="load_local", text="load_local"),
+            ft.DropdownOption(key="load_github", text="load_github"),
+            ft.DropdownOption(key="load_http", text="load_http"),
+            ft.DropdownOption(key="load_drive", text="load_drive"),
+            ft.DropdownOption(key="load_kaggle", text="load_kaggle"),
+        ],
+        value="load_local",
+        width=190,
+        height=48,
+        on_select=lambda e: _syncConstructSourceType(),
+    )
+    constructSourceInput = ft.TextField(
+        label="Source",
+        hint_text=_SOURCE_HINTS["local"],
+        expand=True,
+        height=48,
+    )
+    constructLoadBtn = ft.ElevatedButton("Load Source", on_click=lambda _: _loadConstructSource())
+    constructSourceStatus = ft.Text("", selectable=True)
+
+    constructScaffoldBtn = ft.ElevatedButton(
+        "Scaffold",
+        icon=ft.Icons.CONSTRUCTION,
+        on_click=lambda _: _scaffoldConstruct(),
+    )
+    constructScaffoldStatus = ft.Text("", selectable=True)
+
+    constructDraftBtn = ft.ElevatedButton(
+        "Draft",
+        icon=ft.Icons.PLAY_ARROW,
+        on_click=lambda e: page.run_task(_runConstructDraft, e),
+        bgcolor=ft.Colors.BLUE_700,
+    )
+    constructDraftProgress = ft.ProgressBar(value=0.0, visible=False)
+    constructDraftStatus = ft.Text("", selectable=True)
+
+    constructExportPy = ft.Checkbox(
+        label="Also export flattened .py script",
+        value=False,
+    )
+    constructExportBtn = ft.ElevatedButton(
+        "Export",
+        icon=ft.Icons.SAVE,
+        on_click=lambda _: _exportConstruct(),
+        bgcolor=ft.Colors.GREEN_700,
+    )
+    constructExportStatus = ft.Text("", selectable=True)
+    constructExportPath = ft.Text("", selectable=True, color=ft.Colors.GREY_400)
+
+    def _notify(message):
+        page.overlay.append(ft.SnackBar(content=ft.Text(message), open=True))
+        page.update()
+
+    def _syncConstructLoader():
+        constructLoader.value = _SOURCE_LOADER_MAP.get(
+            constructSourceType.value, "load_local"
+        )
+        constructSourceInput.hint_text = _SOURCE_HINTS.get(
+            constructSourceType.value, ""
+        )
+        page.update()
+
+    def _syncConstructSourceType():
+        reverse_map = {loader: kind for kind, loader in _SOURCE_LOADER_MAP.items()}
+        constructSourceType.value = reverse_map.get(
+            constructLoader.value, "local"
+        )
+        constructSourceInput.hint_text = _SOURCE_HINTS.get(
+            constructSourceType.value, ""
+        )
+        page.update()
+
+    def _loadConstructSource():
+        if state.constructBusy:
+            return
+        raw = constructSourceInput.value.strip()
+        if not raw:
+            constructSourceStatus.value = "Enter a source path or URL."
+            page.update()
+            return
+        source_type = constructSourceType.value
+        if source_type == "local":
+            source = loaders.load_local(raw)
+        elif source_type == "github":
+            source = loaders.load_github(raw)
+        elif source_type == "http":
+            source = loaders.load_http(raw)
+        elif source_type == "drive":
+            source = loaders.load_drive(raw)
+        elif source_type == "kaggle":
+            owner, slug = _parse_kaggle(raw)
+            source = loaders.load_kaggle(owner, slug)
+        else:
+            source = None
+
+        state.construct = ConstructSession(source=source)
+        if source is not None and source.valid:
+            constructSourceStatus.value = (
+                f"Loaded: {source.filename} ({source.source}, "
+                f"{len(source.content)} chars)"
+            )
+            constructSourceStatus.color = ft.Colors.GREEN_400
+        else:
+            errors = source.validation_errors if source is not None else ["Unknown source type"]
+            constructSourceStatus.value = "Load failed: " + "; ".join(errors)
+            constructSourceStatus.color = ft.Colors.RED_400
+        page.update()
+
+    def _scaffoldConstruct():
+        if state.constructBusy:
+            return
+        session = state.construct
+        if session is None or session.source is None or not session.source.valid:
+            constructSourceStatus.value = "Load a valid source before scaffolding."
+            page.update()
+            return
+        result = build_scaffold(session.source)
+        if result.valid:
+            session.scaffold = result.notebook
+            constructScaffoldStatus.value = (
+                f"Scaffold ready: {len(CANONICAL_HEADERS)} canonical sections "
+                "with env-pin and seeds cells."
+            )
+            constructScaffoldStatus.color = ft.Colors.GREEN_400
+        else:
+            constructScaffoldStatus.value = (
+                "Scaffold failed: " + "; ".join(result.validation_errors)
+            )
+            constructScaffoldStatus.color = ft.Colors.RED_400
+        page.update()
+
+    def _showProviderDisclosure(provider_name, cfg_snapshot):
+        """External-provider disclosure (RSK-3): before any draft request to
+        a non-local provider, the user must explicitly confirm that source
+        content may be transmitted to that service."""
+
+        def _confirm_disclosure(cfg_snapshot):
+            page.pop_dialog()
+            page.run_task(_startConstructDraft, cfg_snapshot)
+
+        dlg = ft.AlertDialog(
+            modal=True,
+            title=ft.Text("External provider disclosure"),
+            content=ft.Text(
+                f"Drafting will transmit the source document content to the "
+                f"{provider_name} service. Do not continue if the source is "
+                f"confidential. The source is used as context only; API keys "
+                f"are never included in the request content."
+            ),
+            actions=[
+                ft.TextButton("Cancel", on_click=lambda e: page.pop_dialog()),
+                ft.ElevatedButton(
+                    "Continue",
+                    on_click=lambda e: _confirm_disclosure(cfg_snapshot),
+                ),
+            ],
+        )
+
+        page.show_dialog(dlg)
+
+    async def _runConstructDraft(e=None):
+        """Entry point for the Draft button. Validates state, shows the
+        external-provider disclosure when needed, then starts drafting."""
+        if state.constructBusy:
+            return  # busy guard: no concurrent runs (RSL-2)
+        session = state.construct
+        if session is None or session.source is None or not session.source.valid:
+            constructSourceStatus.value = "Load a valid source before drafting."
+            page.update()
+            return
+        if session.scaffold is None:
+            constructScaffoldStatus.value = "Build the scaffold before drafting."
+            page.update()
+            return
+
+        cfg_snapshot = settings.load()
+        provider_name = (cfg_snapshot.get("llmProvider") or "local").strip().lower()
+        # The default provider is local; the disclosure only applies to
+        # external providers (openai, anthropic, ollama).
+        if provider_name != "local":
+            _showProviderDisclosure(provider_name, cfg_snapshot)
+            return
+        await _startConstructDraft(cfg_snapshot)
+
+    async def _startConstructDraft(cfg_snapshot):
+        if state.constructBusy:
+            return
+        state.constructBusy = True
+        _setConstructBusyUi(True)
+        constructDraftStatus.value = "Drafting sections ..."
+        constructDraftStatus.color = ft.Colors.YELLOW_400
+        constructDraftProgress.value = 0.0
+        constructDraftProgress.visible = True
+        page.update()
+
+        try:
+            provider = create_provider(cfg_snapshot)
+
+            async def progress_cb(done, total, header, message):
+                constructDraftProgress.value = done / total
+                constructDraftStatus.value = f"[{done}/{total}] {header}: {message}"
+                page.update()
+
+            session = await draft_sections(
+                state.construct.scaffold,
+                state.construct.source,
+                provider,
+                progress_cb=progress_cb,
+            )
+            state.construct = session
+            if session.drafted is not None:
+                constructDraftStatus.value = (
+                    "Draft complete: all sections drafted and validated."
+                )
+                constructDraftStatus.color = ft.Colors.GREEN_400
+                _notify("Draft complete — ready to export.")
+            else:
+                constructDraftStatus.value = (
+                    "Draft failed: " + "; ".join(session.errors[:4])
+                )
+                constructDraftStatus.color = ft.Colors.RED_400
+                _notify("Drafting failed — see status.")
+        except ProviderError as exc:
+            constructDraftStatus.value = f"Draft error: {exc}"
+            constructDraftStatus.color = ft.Colors.RED_400
+            _notify("Drafting error.")
+        except Exception as exc:
+            # Defensive: the UI must never crash mid-run.
+            constructDraftStatus.value = f"Draft error: {exc}"
+            constructDraftStatus.color = ft.Colors.RED_400
+        finally:
+            state.constructBusy = False
+            _setConstructBusyUi(False)
+            constructDraftProgress.visible = False
+            page.update()
+
+    def _setConstructBusyUi(busy):
+        for button in _constructButtons:
+            button.disabled = busy
+        page.update()
+
+    def _exportConstruct():
+        if state.constructBusy:
+            return
+        session = state.construct
+        if session is None or session.drafted is None:
+            constructDraftStatus.value = "Draft the notebook before exporting."
+            page.update()
+            return
+        result = save_notebook(
+            session.drafted,
+            session.source.filename,
+            export_py=constructExportPy.value,
+        )
+        if result.valid:
+            constructExportStatus.value = "Export succeeded."
+            constructExportStatus.color = ft.Colors.GREEN_400
+            constructExportPath.value = f"Export path: {result.saved_path}"
+            if result.py_path:
+                constructExportPath.value += f"\nPython export: {result.py_path}"
+            _notify(f"Notebook saved: {result.saved_path}")
+        else:
+            constructExportStatus.value = (
+                "Export failed: " + "; ".join(result.errors)
+            )
+            constructExportStatus.color = ft.Colors.RED_400
+        page.update()
+
+    constructPanel = ft.Column(
+        [
+            ft.Text("Notebook Construction", weight=ft.FontWeight.BOLD, size=16),
+            ft.Divider(),
+            ft.Row([constructSourceType, constructLoader]),
+            ft.Row([constructSourceInput, constructLoadBtn]),
+            constructSourceStatus,
+            ft.Divider(),
+            ft.Row(
+                [
+                    constructScaffoldBtn,
+                    constructScaffoldStatus,
+                ]
+            ),
+            ft.Divider(),
+            ft.Row(
+                [
+                    constructDraftBtn,
+                    constructDraftProgress,
+                ]
+            ),
+            constructDraftStatus,
+            ft.Divider(),
+            ft.Row(
+                [
+                    constructExportPy,
+                    constructExportBtn,
+                ]
+            ),
+            constructExportStatus,
+            constructExportPath,
+        ],
+        spacing=8,
+        scroll=ft.ScrollMode.AUTO,
+        expand=True,
+    )
+
+    _constructButtons = [
+        constructLoadBtn,
+        constructScaffoldBtn,
+        constructDraftBtn,
+        constructExportBtn,
+    ]
+
+    # --- Tab assembly: TAB_SPEC drives both the labels and the panels ---
+    panels_by_key = {
+        "hardwarePanel": hardwarePanel,
+        "modelsPanel": modelsPanel,
+        "serverPanel": serverPanel,
+        "settingsPanel": settingsPanel,
+        "benchmarkPanel": benchmarkPanel,
+        "auditPanel": auditPanel,
+        "constructPanel": constructPanel,
+    }
+    panels = [panels_by_key[spec["panel"]] for spec in TAB_SPEC]
 
     tabs = ft.Tabs(
         selected_index=0,
@@ -844,12 +1328,7 @@ def build(page: ft.Page):
             controls=[
                 ft.TabBar(
                     tabs=[
-                        ft.Tab(label="Hardware"),
-                        ft.Tab(label="Models"),
-                        ft.Tab(label="Server"),
-                        ft.Tab(label="Settings"),
-                        ft.Tab(label="Benchmark"),
-                        ft.Tab(label="Audit"),
+                        ft.Tab(label=spec["label"]) for spec in TAB_SPEC
                     ],
                 ),
                 ft.TabBarView(

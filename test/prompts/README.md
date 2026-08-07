@@ -29,12 +29,15 @@ The installer detects your GPU backend (Metal on macOS, CUDA, or ROCm) and compi
 
 ### GUI
 
-The app opens a desktop window with four tabs:
+The app opens a desktop window with several tabs:
 
 - **Hardware** — OS, RAM, GPU info, and model size recommendation
 - **Models** — browse HuggingFace for compatible GGUF models, pick a quantization, download to disk
 - **Server** — select a downloaded model from a dropdown (or type a path), configure host/port/GPU layers/context, start/stop the local inference server
-- **Settings** — change models directory, save config
+- **Settings** — change models directory, LLM provider (local/openai/anthropic/ollama) and keys, save config
+- **Construct** — build a notebook from a source document (see below)
+- **Audit** — scan and load notebooks from `test/prompts/notebooks/`
+- **Benchmark** — compare models/APIs side-by-side with a shared prompt
 
 The Server tab shows all `.gguf` files in the models directory in a dropdown. Use **Refresh** to rescan after new downloads.
 
@@ -47,6 +50,34 @@ venv/bin/python3 tools/hello_llm.py
 ```
 
 Sends a chat-completion request to `http://localhost:8000/v1/chat/completions` and prints the reply.
+
+### Construct tab (notebook construction)
+
+The **Construct** tab builds a reproducible Jupyter notebook from a source
+document (local file, GitHub raw/blob, generic HTTP, Google Drive, or Kaggle
+dataset): load a source → scaffold the canonical 8-section skeleton → LLM-draft
+each section → export. Exports land in `test/prompts/notebooks/` (dev), which is
+the same directory the **Audit** tab's Scan DB scans, closing the construct →
+audit loop.
+
+- The active LLM is chosen in **Settings** via the provider dropdown
+  (`local` is the default and needs no key; `openai`, `anthropic`, and `ollama`
+  each require their key/model). External providers show a disclosure before the
+  first draft and are never used without your confirmation.
+- The `.py` export checkbox writes a flattened Python script alongside the
+  `.ipynb` (off by default).
+
+Run the offline probes and the scripted end-to-end demo without starting the app
+or any LLM server:
+
+```bash
+# Provider + construct-core probes (fully offline, canned responses)
+venv/bin/python3 tools/provider_probe.py
+venv/bin/python3 tools/construct_probe.py
+
+# Full loop demo: .md → scaffold → draft (fake provider) → export → Scan DB
+venv/bin/python3 tools/construct_e2e.py
+```
 
 ---
 

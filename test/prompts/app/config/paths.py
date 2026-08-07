@@ -33,6 +33,16 @@ def userModelsDir():
     return _USER_BASE / "models"
 
 
+def defaultNotebooksDir():
+    if isDeployed():
+        return userNotebooksDir()
+    return NOTEBOOKS_DIR
+
+
+def userNotebooksDir():
+    return _USER_BASE / "notebooks"
+
+
 def userConfigPath():
     return _USER_BASE / "config.json"
 
@@ -54,6 +64,7 @@ def userReportsDir():
 def ensureUserDirs():
     _USER_BASE.mkdir(parents=True, exist_ok=True)
     userModelsDir().mkdir(parents=True, exist_ok=True)
+    userNotebooksDir().mkdir(parents=True, exist_ok=True)
     userReportsDir().mkdir(parents=True, exist_ok=True)
 
 
@@ -65,7 +76,9 @@ def debugPaths():
     print(f"NOTEBOOKS_DIR: {NOTEBOOKS_DIR}")
     print(f"USER_BASE: {_USER_BASE}")
     print(f"USER_MODELS: {userModelsDir()}")
+    print(f"USER_NOTEBOOKS: {userNotebooksDir()}")
     print(f"USER_REPORTS: {userReportsDir()}")
     print(f"DEFAULT_REPORTS: {defaultReportsDir()}")
+    print(f"DEFAULT_NOTEBOOKS: {defaultNotebooksDir()}")
     print(f"USER_CONFIG: {userConfigPath()}")
     print(f"USER_VENV: {userVenvDir()}")

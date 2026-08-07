@@ -3,14 +3,22 @@
 import sys
 from pathlib import Path
 
+from PyInstaller.utils.hooks import collect_data_files
+
+nbformat_datas = collect_data_files("nbformat")
+
 a = Analysis(
     ["scripts/install.py"],
     pathex=[],
     binaries=[],
     datas=[
         ("requirements.txt", "."),
+    ] + nbformat_datas,
+    hiddenimports=[
+        "nbformat.validator",
+        "fastjsonschema",
+        "jsonschema",
     ],
-    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
