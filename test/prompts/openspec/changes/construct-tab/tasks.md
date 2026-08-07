@@ -61,10 +61,10 @@ Chain strategy: pending
 
 ## Phase 4: UI Wiring
 
-- [ ] 4.1 app.py: single `TAB_SPEC` list driving `panels[]` + `ft.Tabs`; keep 6 existing tabs working (regression guard)
-- [ ] 4.2 app.py settings panel: provider dropdown + masked key fields (`password=True`), save wiring, never logged (R19)
-- [ ] 4.3 app.py: Construct panel — source input/type, loader selector, scaffold/draft/export buttons, `.py` opt-in (R23)
-- [ ] 4.4 app.py: async `_run_construct` via `page.run_task`, `progress_cb` updates, success/failure surfaced; register 7th tab via `TAB_SPEC` (R15, R23)
+- [x] 4.1 app.py: single `TAB_SPEC` list driving `panels[]` + `ft.Tabs`; keep 6 existing tabs working (regression guard)
+- [x] 4.2 app.py settings panel: provider dropdown + masked key fields (`password=True`), save wiring, never logged (R19)
+- [x] 4.3 app.py: Construct panel — source input/type, loader selector, scaffold/draft/export buttons, `.py` opt-in (R23)
+- [x] 4.4 app.py: async `_run_construct` via `page.run_task`, `progress_cb` updates, success/failure surfaced; register 7th tab via `TAB_SPEC` (R15, R23)
 
 ## Phase 5: Verification & Docs
 
