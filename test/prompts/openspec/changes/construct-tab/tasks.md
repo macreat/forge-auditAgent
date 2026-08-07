@@ -45,19 +45,19 @@ Chain strategy: pending
 
 ## Phase 3: Construct Core
 
-- [ ] 3.1 construct/__init__.py + models.py: `SourceDocument`, `ConstructSession` (R1)
-- [ ] 3.2 loaders.py: format gate whitelist `.ipynb/.py/.md/.txt` + `load_local()` return-invalid-not-raise (R2, R3)
-- [ ] 3.3 loaders.py: `load_github()` blob→raw normalize, `httpx.get(timeout=30, follow_redirects=True)`, 404→invalid (R4)
-- [ ] 3.4 loaders.py: `load_http()` Content-Disposition parse + streamed size cap 10–50 MB (R7)
-- [ ] 3.5 loaders.py: `load_drive()` 4 URL forms, confirm-token second GET, permission→invalid (R5)
-- [ ] 3.6 loaders.py: `load_kaggle()` zip-unwrap single text member, ambiguous→invalid (R6)
-- [ ] 3.7 scaffold.py: 8 canonical headers exact order, env-pin cell, seeds cell (R8, R9, R10)
-- [ ] 3.8 scaffold.py: nbformat v4 + `nbformat.validate` gate; source context-only (R11, R12)
-- [ ] 3.9 prompts.py: per-section prompts encoding Phase 2 discipline rules (R13)
-- [ ] 3.10 writer.py: `parse_section_output` strict `===MARKDOWN===`/`===CODE===` (R16)
-- [ ] 3.11 writer.py: `draft_sections` sequential + `progress_cb`, retry-once, `ast.parse` per code cell, failed section recorded, run continues (R15, R17, R18)
-- [ ] 3.12 export.py: `save_notebook` → `defaultNotebooksDir()`, mkdir, `-vN` versioned names, saved path (R20, R21)
-- [ ] 3.13 export.py: optional flattened `.py` (concatenated code cells) (R22)
+- [x] 3.1 construct/__init__.py + models.py: `SourceDocument`, `ConstructSession` (R1)
+- [x] 3.2 loaders.py: format gate whitelist `.ipynb/.py/.md/.txt` + `load_local()` return-invalid-not-raise (R2, R3)
+- [x] 3.3 loaders.py: `load_github()` blob→raw normalize, `httpx.get(timeout=30, follow_redirects=True)`, 404→invalid (R4)
+- [x] 3.4 loaders.py: `load_http()` Content-Disposition parse + streamed size cap 10–50 MB (R7)
+- [x] 3.5 loaders.py: `load_drive()` 4 URL forms, confirm-token second GET, permission→invalid (R5)
+- [x] 3.6 loaders.py: `load_kaggle()` zip-unwrap single text member, ambiguous→invalid (R6)
+- [x] 3.7 scaffold.py: 8 canonical headers exact order, env-pin cell, seeds cell (R8, R9, R10)
+- [x] 3.8 scaffold.py: nbformat v4 + `nbformat.validate` gate; source context-only (R11, R12)
+- [x] 3.9 prompts.py: per-section prompts encoding Phase 2 discipline rules (R13)
+- [x] 3.10 writer.py: `parse_section_output` strict `===MARKDOWN===`/`===CODE===` (R16)
+- [x] 3.11 writer.py: `draft_sections` sequential + `progress_cb`, retry-once, `ast.parse` per code cell, failed section recorded, run continues (R15, R17, R18)
+- [x] 3.12 export.py: `save_notebook` → `defaultNotebooksDir()`, mkdir, `-vN` versioned names, saved path (R20, R21)
+- [x] 3.13 export.py: optional flattened `.py` (concatenated code cells) (R22)
 
 ## Phase 4: UI Wiring
 
