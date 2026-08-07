@@ -68,11 +68,11 @@ Chain strategy: pending
 
 ## Phase 5: Verification & Docs
 
-- [ ] 5.1 Import-smoke all new modules (config verify command)
-- [ ] 5.2 Loader probes: missing file, unsupported ext, `.sh/.pdf/.exe`→invalid (threat matrix), github normalize, drive confirm, kaggle ambiguous, size cap, Content-Disposition (R1–R7)
-- [ ] 5.3 Scaffold probe: headers order, cell placement, `nbformat.validate` passes (R8–R12)
-- [ ] 5.4 Writer probe: fake provider canned/off-format, retry-once, `ast.parse` reject, failure continues (R15–R18)
-- [ ] 5.5 Export probe: versioned names, dir creation, `.py` opt-in (R20–R22)
-- [ ] 5.6 Scripted E2E demo: `.md` → scaffold → draft (local) → save → Audit Scan DB lists it; README usage note (R23)
+- [x] 5.1 Import-smoke all new modules (config verify command)
+- [x] 5.2 Loader probes: missing file, unsupported ext, `.sh/.pdf/.exe`→invalid (threat matrix), github normalize, drive confirm, kaggle ambiguous, size cap, Content-Disposition (R1–R7)
+- [x] 5.3 Scaffold probe: headers order, cell placement, `nbformat.validate` passes (R8–R12)
+- [x] 5.4 Writer probe: fake provider canned/off-format, retry-once, `ast.parse` reject, failure continues (R15–R18)
+- [x] 5.5 Export probe: versioned names, dir creation, `.py` opt-in (R20–R22)
+- [x] 5.6 Scripted E2E demo: `.md` → scaffold → draft (fake provider) → save → Audit Scan DB lists it; README usage note (R23)
 
 Traceability: R1–R7 source-loading (14 scenarios), R8–R13 scaffold (8), R14–R19 drafting (11), R20–R23 export (8) = 23 req / 41 scenarios. TDD inactive: probes are ad-hoc scripts, no runner. House style: return-invalid-not-raise loaders, `httpx.get(timeout=30, follow_redirects=True)`, pure functions for scaffold/prompts/validation.

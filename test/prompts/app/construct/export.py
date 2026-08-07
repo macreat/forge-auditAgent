@@ -82,10 +82,17 @@ def _next_available(directory: Path, filename: str) -> Path:
 def _atomic_write(path: Path, text: str) -> str | None:
     """Write ``text`` to ``path`` atomically: a temp file in the same
     directory, fsync'd, then ``os.replace``. Returns an error string or
-    ``None`` on success."""
-    fd, tmp_name = tempfile.mkstemp(
-        dir=str(path.parent), prefix=path.name + ".", suffix=".tmp"
-    )
+    ``None`` on success.
+
+    ``tempfile.mkstemp`` runs inside the guard so a permission-denied on
+    the target directory is surfaced as an error result, never a crash.
+    """
+    try:
+        fd, tmp_name = tempfile.mkstemp(
+            dir=str(path.parent), prefix=path.name + ".", suffix=".tmp"
+        )
+    except OSError as exc:
+        return f"Cannot write {path.name}: {exc}"
     tmp = Path(tmp_name)
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:

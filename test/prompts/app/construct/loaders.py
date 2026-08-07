@@ -35,6 +35,7 @@ import socket
 import time
 import urllib.parse
 import zipfile
+import zlib
 from pathlib import Path
 
 import httpx
@@ -650,7 +651,7 @@ def _unwrap_kaggle_zip(content: bytes) -> SourceDocument:
                 )
             member = text_members[0]
             raw = archive.read(member)
-    except (zipfile.BadZipFile, OSError, RuntimeError, NotImplementedError) as exc:
+    except (zipfile.BadZipFile, zlib.error, OSError, RuntimeError, NotImplementedError) as exc:
         return _invalid("kaggle", "kaggle", [f"Invalid ZIP archive: {exc}"])
 
     return _decode_text(raw, Path(member).name, "kaggle")
