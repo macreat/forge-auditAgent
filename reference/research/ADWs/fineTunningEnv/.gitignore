@@ -1,0 +1,22 @@
+# Python venv (created by python -m venv)
+bin/
+lib/
+lib64/
+include/
+share/
+etc/
+pyvenv.cfg
+
+# Generated artifacts (nb-audit)
+automation/audit-runs/
+automation/.pytest_cache/
+automation/nb_audit.egg-info/
+automation/**/__pycache__/
+automation/**/*.pyc
+
+# Large experiment outputs (notebooks/models) — commit intentionally
+nbs/**/*.gguf
+nbs/**/*.pt
+nbs/**/*.pth
+nbs/**/*.bin
+nbs/**/*.safetensors

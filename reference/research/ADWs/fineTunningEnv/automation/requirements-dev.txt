@@ -1,0 +1,4 @@
+# Development-only dependencies for the nb-audit test suite.
+# Installed into the fineTunningEnv venv (not shipped with the package).
+pytest>=8.0
+pytest-asyncio>=0.23
